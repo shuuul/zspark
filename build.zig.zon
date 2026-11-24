@@ -1,6 +1,6 @@
 .{
     .name = .zspark,
-    .version = "2026.11.12",
+    .version = "2026.11.24",
     .fingerprint = 0x404ab734ae3e57c4,
     .minimum_zig_version = "0.17.1",
     .dependencies = .{
