@@ -1,0 +1,560 @@
+{
+ "provenance": {
+  "tensorfold_version": "0.6.5",
+  "checkpoint": "Qwen3.8-Flash-Next-NVFP4",
+  "transformers": "5.18.0",
+  "torch": "2.13.0a0+9186a08b2c.nv26.07",
+  "torchvision": "0.28.0a0+85a1dccc.nv26.07",
+  "pillow": "12.3.0",
+  "seed": 19,
+  "rendered": "<|im_start|>user\n{images}Hi.<|im_end|>\n<|im_start|>assistant\n",
+  "marker": "<|vision_start|><|image_pad|><|vision_end|>"
+ },
+ "probes": [
+  {
+   "name": "one_pixel",
+   "sizes": [
+    [
+     1,
+     1
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     2,
+     2
+    ]
+   ],
+   "ids": 13,
+   "delta": 0
+  },
+  {
+   "name": "ten",
+   "sizes": [
+    [
+     10,
+     10
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     2,
+     2
+    ]
+   ],
+   "ids": 13,
+   "delta": 0
+  },
+  {
+   "name": "under_floor",
+   "sizes": [
+    [
+     31,
+     33
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     2,
+     2
+    ]
+   ],
+   "ids": 13,
+   "delta": 0
+  },
+  {
+   "name": "thin",
+   "sizes": [
+    [
+     300,
+     5
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     2,
+     16
+    ]
+   ],
+   "ids": 20,
+   "delta": 0
+  },
+  {
+   "name": "aspect_201",
+   "sizes": [
+    [
+     1608,
+     8
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "error": "absolute aspect ratio must be smaller than 200, got 201.0"
+  },
+  {
+   "name": "aspect_200",
+   "sizes": [
+    [
+     1600,
+     8
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     2,
+     30
+    ]
+   ],
+   "ids": 27,
+   "delta": 0
+  },
+  {
+   "name": "aspect_400",
+   "sizes": [
+    [
+     2000,
+     5
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "error": "absolute aspect ratio must be smaller than 200, got 400.0"
+  },
+  {
+   "name": "big",
+   "sizes": [
+    [
+     5000,
+     3000
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     98,
+     164
+    ]
+   ],
+   "ids": 4030,
+   "delta": -3936
+  },
+  {
+   "name": "four_big",
+   "sizes": [
+    [
+     3000,
+     3000
+    ],
+    [
+     3000,
+     3000
+    ],
+    [
+     3000,
+     3000
+    ],
+    [
+     3000,
+     3000
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     64,
+     64
+    ],
+    [
+     1,
+     64,
+     64
+    ],
+    [
+     1,
+     64,
+     64
+    ],
+    [
+     1,
+     64,
+     64
+    ]
+   ],
+   "ids": 4114,
+   "delta": -3968
+  },
+  {
+   "name": "low",
+   "sizes": [
+    [
+     3000,
+     3000
+    ]
+   ],
+   "detail": "low",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     32,
+     32
+    ]
+   ],
+   "ids": 268,
+   "delta": -240
+  },
+  {
+   "name": "one_token",
+   "sizes": [
+    [
+     64,
+     64
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {
+    "max_visual_tokens": 1
+   },
+   "grids": [
+    [
+     1,
+     2,
+     2
+    ]
+   ],
+   "ids": 13,
+   "delta": 0
+  },
+  {
+   "name": "floor_past_budget",
+   "sizes": [
+    [
+     300,
+     5
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {
+    "max_visual_tokens": 1
+   },
+   "error": "Processed images exceed the visual-token budget; reduce image resolution or count"
+  },
+  {
+   "name": "count_past_budget",
+   "sizes": [
+    [
+     64,
+     64
+    ],
+    [
+     64,
+     64
+    ],
+    [
+     64,
+     64
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {
+    "max_visual_tokens": 2
+   },
+   "error": "The image count exceeds the visual-token budget"
+  },
+  {
+   "name": "two_share",
+   "sizes": [
+    [
+     1000,
+     1000
+    ],
+    [
+     50,
+     50
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {
+    "max_visual_tokens": 100
+   },
+   "grids": [
+    [
+     1,
+     14,
+     14
+    ],
+    [
+     1,
+     4,
+     4
+    ]
+   ],
+   "ids": 67,
+   "delta": -44
+  },
+  {
+   "name": "past_context",
+   "sizes": [
+    [
+     512,
+     512
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {
+    "max_prompt_tokens": 100
+   },
+   "error": "This server's maximum context length is 100 tokens: the expanded image prompt has 268 tokens, which exceeds the context window; reduce image resolution or prompt length"
+  },
+  {
+   "name": "within_context",
+   "sizes": [
+    [
+     512,
+     512
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {
+    "max_prompt_tokens": 300
+   },
+   "grids": [
+    [
+     1,
+     32,
+     32
+    ]
+   ],
+   "ids": 268,
+   "delta": -240
+  },
+  {
+   "name": "no_image",
+   "sizes": [],
+   "detail": "auto",
+   "kwargs": {},
+   "error": "Image preprocessing needs images and a positive visual-token budget"
+  },
+  {
+   "name": "wide",
+   "sizes": [
+    [
+     8192,
+     41
+    ]
+   ],
+   "detail": "auto",
+   "kwargs": {},
+   "grids": [
+    [
+     1,
+     2,
+     512
+    ]
+   ],
+   "ids": 268,
+   "delta": 0
+  }
+ ],
+ "random": [
+  {
+   "name": "r0",
+   "width": 300,
+   "height": 200,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    12,
+    18
+   ],
+   "ids": 66,
+   "delta": -45,
+   "content_hash": "667ad7478e92152691269e7526a7ec973a8ed482954f812506d458ba0b29f2b7",
+   "pixel_values_sha256": "9f735c6da3b2c7c59c323413e095074715a865d2aa9eec0455af75037fdc1ba9"
+  },
+  {
+   "name": "r1",
+   "width": 48,
+   "height": 40,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    2,
+    4
+   ],
+   "ids": 14,
+   "delta": 0,
+   "content_hash": "a372f43063b0ed1c157f22acbfa35d542dc7a4ed03aaf6aec709bd0287ee8d0c",
+   "pixel_values_sha256": "09c537de3333b6c41de18fd535161ae025575d8428e36f3188abbfd40abe6805"
+  },
+  {
+   "name": "r2",
+   "width": 1000,
+   "height": 750,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    46,
+    62
+   ],
+   "ids": 725,
+   "delta": -682,
+   "content_hash": "eeed3f5825ef90a37d33d86e5ddcbbe711ebdba9bf48023dc8c09b892fef8f56",
+   "pixel_values_sha256": "18d7f9b028c7c89cc7ef0e9781a1e261562b5767847aa0f2e53bb8631717abd5"
+  },
+  {
+   "name": "r3",
+   "width": 1000,
+   "height": 750,
+   "max_visual_tokens": 64,
+   "grid": [
+    1,
+    12,
+    18
+   ],
+   "ids": 66,
+   "delta": -45,
+   "content_hash": "031fbf97153366d2b0de70e2abfe006ed9c841d557d85105e4dda2ace7074de6",
+   "pixel_values_sha256": "b4efec47abc1663f5ac78df5f994ee22cbd8e7012954305a6757ff3e0ecc50d5"
+  },
+  {
+   "name": "r4",
+   "width": 33,
+   "height": 97,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    6,
+    2
+   ],
+   "ids": 15,
+   "delta": 0,
+   "content_hash": "818a0198f528d810c0c4c89ca26f0ef179072e9520b4bcff206e8c33f5a44c7e",
+   "pixel_values_sha256": "0c003d9667b9d0512902c8b3a785a2cba33a8bbea80c15008986fee8859cea67"
+  },
+  {
+   "name": "r5",
+   "width": 640,
+   "height": 480,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    30,
+    40
+   ],
+   "ids": 312,
+   "delta": -280,
+   "content_hash": "4429ba731255d1dece4318d6fe038061355ff508e94567c47ca548b938afbcc5",
+   "pixel_values_sha256": "716b2c4868f970d4043795b6117a5efe47b1c7772302bcb21d29d0fa5540808b"
+  },
+  {
+   "name": "r6",
+   "width": 17,
+   "height": 1500,
+   "max_visual_tokens": 256,
+   "grid": [
+    1,
+    94,
+    2
+   ],
+   "ids": 59,
+   "delta": 0,
+   "content_hash": "69271a5c7c8d4cdc1cb73478fd48291d802a9b92c20f8c233d952f491a4629dd",
+   "pixel_values_sha256": "65dee23e8f1658cfeae91f3ba4189239a8ef735faf0af907bbdc8dca5bfd1c13"
+  },
+  {
+   "name": "r7",
+   "width": 1920,
+   "height": 1080,
+   "max_visual_tokens": 1024,
+   "grid": [
+    1,
+    48,
+    84
+   ],
+   "ids": 1020,
+   "delta": -966,
+   "content_hash": "00ad7a352589f5f672324dc0a2ac5f3edcf603991c8bbf2fd1169cc6a0c2224a",
+   "pixel_values_sha256": "2462fe04f2c47ca48d66398f6ba231d925c9a893df36c8538496527f03854f4f"
+  },
+  {
+   "name": "r8",
+   "width": 129,
+   "height": 65,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    4,
+    8
+   ],
+   "ids": 20,
+   "delta": -4,
+   "content_hash": "ec4d9b808c8f7f6a56f13ac9f362b506706c8529dc8aefd50ee21dcf2f85aaa6",
+   "pixel_values_sha256": "d6e8a38e08d2c72e8651b05f45a3d3028cb051d13b5d1d196cd3bd0ad5902cf3"
+  },
+  {
+   "name": "r9",
+   "width": 2000,
+   "height": 10,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    2,
+    30
+   ],
+   "ids": 27,
+   "delta": 0,
+   "content_hash": "8aacfd5e499b13dac7f76b290d07a13da5d3e7175110e90110b65e274ea9931c",
+   "pixel_values_sha256": "3cc1843eff1e235aaf1d43010e2784061da8b9e38e55e5d0f7b28b22fca00cdb"
+  },
+  {
+   "name": "r10",
+   "width": 511,
+   "height": 513,
+   "max_visual_tokens": 4096,
+   "grid": [
+    1,
+    32,
+    32
+   ],
+   "ids": 268,
+   "delta": -240,
+   "content_hash": "1f7265329a80fdacf57c373b6bf22b63f1b4272023d8026f7621f4708106efc7",
+   "pixel_values_sha256": "2c20a56a37ffadc52ba694c9067206dd4ca67ab1d133b66a96c09422f3d0c011"
+  },
+  {
+   "name": "r11",
+   "width": 800,
+   "height": 600,
+   "max_visual_tokens": 16,
+   "grid": [
+    1,
+    6,
+    8
+   ],
+   "ids": 24,
+   "delta": -8,
+   "content_hash": "cd72fe4c4458bbb2a0ad85308db55e918107598073931ba04a5aec8d0c3c9802",
+   "pixel_values_sha256": "684e2b91729eaf86b2d3df9ca940e27938dfd31663aeb3c546d1eb57240f108d"
+  }
+ ]
+}

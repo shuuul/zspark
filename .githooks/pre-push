@@ -1,0 +1,6 @@
+#!/bin/sh
+# What CI ran on every push before; CI now runs it on pull requests only.
+set -eu
+cache_root=$HOME/.cache/zspark
+mkdir -p "$cache_root"
+exec flock -s "$cache_root/machine.lock" flock -s "$cache_root/cache.lock" zig build check-specs test-specs

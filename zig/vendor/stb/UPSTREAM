@@ -1,0 +1,16 @@
+repository: https://github.com/nothings/stb
+commit: 6b5799bae8a1fe3792691ef4b72ae26434c3e799 (master, 2026-11-19); stb_image.h and stb_vorbis.c as of
+the same commit
+version: stb_image v2.34, stb_vorbis v1.25
+license: MIT or public domain (the Unlicense), the user's choice (LICENSE, and the end of each file)
+imported: 2026-11-21 (spec 175 WS-02), by `tools/vendor_c.sh --stage stb DIR` from a clone's export; before it
+  9600522de53973336fa033a289858a4354cbb04c (2026-11-12), 2026-11-15 (spec 174 WS-02),
+  52a3128f493138d01204272e030926ee693f5f2b (2026-11-11), 2026-11-12 (spec 167 WS-01),
+  2c980bb59875b0d32144a71867fbdebb2f77cd20 (2026-08-01), 2026-10-17 (spec 019 WS-07), stb_vorbis.c 2026-10-25
+  (spec 138 WS-02)
+files: 3 (480,401 bytes), listed with their sha256 in MANIFEST.sha256
+
+What was taken: stb_image.h and stb_vorbis.c, the files the build compiles, and LICENSE. zspark's translation
+unit that defines STB_IMAGE_IMPLEMENTATION and its options is zig/src/image/stb_image.c. It compiles JPEG
+(baseline and progressive), BMP, TGA, PSD and PNM, without stdio, HDR or the linear path. stb_vorbis.c's is
+zig/src/audio/vorbis.c, from memory without stdio. Nothing else of the repository.

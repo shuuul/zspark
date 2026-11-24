@@ -1,0 +1,1965 @@
+---
+id: "014"
+title: "Flash Next on EXL3"
+status: Completed
+created: 2026-10-05
+updated: 2026-10-05
+coordinator: "Claude (Opus 5.5), with shuuul deciding scope"
+---
+
+# 014 — Flash Next on EXL3
+
+## Context
+
+Roadmap 6. TensorFold 0.6.5 decodes `turboderp/Qwen3.8-Flash-Next-exl3` (branch `3.05bpw_h5_ng5`: 52 GB of
+weights on the GPU, a 32.6 GB n-gram table) on one GPU. Its EXL3 kernels are plain CUDA behind ATen launchers
+(`cuda/exl3/decode.cuh`, `linear.cu`, `experts.cu`, `experts_grouped.cuh`, about 1,260 lines), with the format in
+`cuda/exl3/format.py` and `docs/recipes/exl3.md`, and the family's loader in `families/qwen4_exp/cuda/exl3.py`,
+`exl3_mm.py`, `exl3_pack.py`. Weights are decoded on the fly into `m16n8k16` B fragments; nothing decoded is kept.
+No checkpoint is on either Spark yet, and TensorFold has no reference exporter for this path.
+
+What is EXL3 in the pack: attention `q/k/v_proj` with the indexer's projection (stacked) and `o_proj`; DeltaNet
+`in_proj_qkv`, `in_proj_z`, `out_proj`; `lm_head`; the MTP head's `fc_embedding`, `fc_hidden` and layer; the 512
+routed experts and the shared one as one table, each matrix at its own width. Unquantized and run as fp16: the
+hyper-connection mixers, DeltaNet `in_proj_b`/`in_proj_a`, PLE projections. The n-gram table has its own trellis
+(a row: one fp16 scale and 160 values), memory-mapped. Norms are stored centred (gamma - 1). The draft head is
+requantized from decoded head rows. There is no FP8 on this path.
+
+## Goal and success criteria
+
+- [x] `zspark chat`, `serve`, `generate`, `score` and `compare` take the EXL3 pack as DIR.
+- [x] The format reader agrees with TensorFold's numpy reference (`format.py` `unpack`/`dequantize`) on real
+      tensors at every width and codebook the pack holds.
+- [x] A row's bits depend on no other row; a window gives its serial steps' bits; a drafted reply equals the
+      serial one. Prompts run through the decode kernels (TensorFold's prefill GEMM, other bits, is not taken).
+- [x] Against TensorFold on the same pack: every exported point within the tolerance `zspark compare` uses, and
+      the greedy reply for the two reference prompts.
+- [x] Measured and recorded: load time, memory, decode tok/s serial and drafted, a cold prompt, `zspark score`
+      on the 5336 tokens beside the NVFP4 checkpoint's 2.1425.
+
+## Scope and non-goals
+
+In scope:
+
+- Format and pack reader; dense and expert kernels with a C ABI; fp16 linears; the n-gram table; centred norms;
+  the layout and model wiring; an exporter option for EXL3 references; tests.
+
+Not in scope:
+
+- GLM-5.3-Flash (the next spec of roadmap 6). Two ranks. TensorFold's prefill GEMM and its workspace.
+
+## Decisions
+
+| Date | Decision | Rationale | Affected workstreams |
+| --- | --- | --- | --- |
+| 2026-10-05 | TensorFold's `__global__` kernels are taken as they are, the launchers rewritten on `zs::View` | They are plain CUDA already; the port's risk is in the bit arithmetic, which should stay TensorFold's | WS-02, WS-03 |
+| 2026-10-05 | Prompts use the decode kernels | The rule: a prompt row is the serial step's bits. TensorFold's prompt path differs from its decode path and keeps prompt ends apart for it | WS-04 |
+| 2026-10-05 | Developed on spark-a; the pack is downloaded there | spark-b works on spec 015 with the NVFP4 checkpoint it already holds | all |
+| 2026-10-05 | The write-back is `bf16(h + branch * inject)`, one rounding, on every checkpoint | TensorFold's exported streams follow it bit for bit and not the two roundings its Triton source reads; NVFP4 and hybrid bits change with it | WS-05 |
+| 2026-10-05 | The hybrid's greedy and sampled `primes` bounds go from 32 and 28 to 18 | Row 40 changes its token under noise of 1.5e-4 in 5 seeds of 8; a reply's length of agreement past such a row is not held by the arithmetic | WS-05 |
+
+## Workstreams
+
+Use `Pending`, `Claimed`, `In progress`, `Blocked`, or `Done`.
+
+| ID | Deliverable | Owner | Status | Dependencies | Verification |
+| --- | --- | --- | --- | --- | --- |
+| WS-01 | Format and pack: config detection, a linear's parts, widths, strips, extra files; a host decoder for tests | Claude subagent | Done | None | TensorFold's `format.py` values exported for sample tensors; no GPU |
+| WS-02 | Dense kernels (`decode.cuh`, `linear.cu`: `rot_in`, `linear`, `unpack`) off ATen, `exl3_device.zig` | Claude subagent | Done | WS-01 | Against the host decoder's product; a row alone; M 1 to 128 |
+| WS-03 | Expert kernels (`experts.cu`, `experts_grouped.cuh`, three codebooks) off ATen; the expert table | Claude subagent | Done | WS-01 | Against the host; a row alone; windows against steps |
+| WS-04 | fp16 linears, centred norms, n-gram table (mmap, `_ple_rows` rewritten from Triton), layout and model wiring | Claude subagent | Done | WS-02, WS-03 | Random-model tests; the checkpoint's first layers |
+| WS-05 | References: `tools/reference` exporter on the EXL3 pack; `zspark compare`; measurements; docs | Claude subagent | Done | WS-04 | `zspark compare`; `zspark score`; the numbers in the handoff |
+
+## Verification
+
+- `zig build test --summary all` with `ZSPARK_FLASH_NEXT_EXL3_3_05BPW` and `ZSPARK_REFERENCE_EXL3_3_05BPW`; `zig build check-specs`.
+- Every full load under `flock ~/.cache/zspark/gpu.lock`.
+
+## Documentation sync
+
+- Durable product/developer docs: `README.md` (the pack, its numbers).
+- Nearest local `AGENTS.md`: `src/flash_next/AGENTS.md`, `kernels/AGENTS.md` (a `kernels/exl3/` directory and its
+  provenance), `tools/reference/AGENTS.md`.
+- Root guidance and roadmap: `AGENTS.md` (scope, roadmap 6, layout).
+
+## Progress and handoff
+
+Append entries rather than rewriting another worker's record.
+
+### 2026-10-05, WS-01 the format and its host decoder (Claude subagent, branch `spec-014-exl3-format`)
+
+Written by the subagent at the coordinator's request.
+
+- Changed: `src/exl3.zig` (new, host only), `src/testdata/exl3_cases.bin` (292 KB), `tools/reference/exl3_cases.py`,
+  `src/main.zig` (the test list), `AGENTS.md`, `src/AGENTS.md`, `tools/reference/AGENTS.md`.
+- `src/exl3.zig` holds: `Config` (`block`, `parse`, `detect`: the block under either key, at the top level or in
+  `text_config`, else the sidecar; `require_config`'s refusals); `Codebook` (3inst, mcg, mul1; the tag is the
+  kernels' id); `Width` (twice the bits, the kernels' `K2`; from the trellis' last dimension); `tileStates`,
+  `position`, `unpack`, `unpackWith`; `Scales` (fp16, or the packed sign words); `Parts` and `Linear` (`read`,
+  `parse` with `parse_group`'s refusals, `unpack`, `dequantize` to f32 or f64, `forward` in fp64 in the kernels'
+  order); `strips`, `Order`, `Strides` (32-bit words, as `linear.py`'s `strides`), `Plan.of` (`plan`);
+  `extra_files`.
+- Departures from TensorFold, said in the code: `dequantize` rotates with exact sums and differences in fp64 and
+  divides by 128 once, where numpy multiplies by H / sqrt(128) twice (agreement below); `Linear.parse` also
+  refuses a marker holding another value than its codebook's multiplier, and a bias that is not F16 [N].
+- Evidence: `zig test src/exl3.zig`, 11 tests (15 with `safetensors.zig`'s), no GPU. Against the fixture: the three
+  codebooks' whole tables (CRC-32); `unpack` bit for bit at all 27 codebook and width combinations; three layers
+  (3inst at 3 bits; mcg at 4 with `su`/`sv` and a bias; mul1 at 2.5 with a bias): W and y within 2^-46 of the
+  summed magnitudes (2^-50 passes, 2^-54 does not); 22 plans. Without the fixture: a decoder written bit by bit
+  from the description, 27 combinations; the strips as a permutation of the tiles, found by the kernels' strides,
+  decoding to the same W_q. Mutations that each failed a test: the half widths' ends, the tile's rows, the word
+  order, a codebook constant, the strips' block order, the plan's fewest tiles, the sign polarity, a scale.
+- On real tensors (range requests, a one-off outside the repository): `layers.0.mlp.experts.10.gate_proj` (3
+  bits), `layers.3.self_attn.k_proj` (5), `mtp.fc_embedding` (4): W_q equal to `format.unpack` bit for bit, W
+  within 1e-16 of `format.dequantize` where the largest entry is 0.17 to 0.57. Rounded to fp32, 39 to 280 entries
+  in 1.3 to 6.6 million differ by a last bit: the exact value sits on an fp32 tie and numpy is an fp64 step off.
+  So compare a kernel with the fp64 values and a tolerance, not with fp32 bits.
+- `zig build` and `zig build check-specs` pass. `zig build test` was not run (the GPU was in use): `main.zig`'s
+  test list has the new file, and `zig test -fno-emit-bin -lc src/main.zig` analyses that root without error.
+
+The pack (`turboderp/Qwen3.8-Flash-Next-exl3`, `3.05bpw_h5_ng5`, commit 69e33439), from every file's header:
+
+- Files: `model-0000N-of-00007.safetensors` (layers 0-6, 7-14, 15-22, 23-30, 31-38, 39-46, then 47 with `lm_head`,
+  `mtp.*`, the mixer and `model.visual.*`), `ngram_embedding.safetensors` (32.6 GB),
+  `mtp_hyper_connection_mixer_patch.safetensors` (13 MB), `model.safetensors.index.json` (33 MB, 304105 names,
+  `total_size` 52358593436), `quantization_config.json` (96 MB: the block again plus every stored tensor).
+  The index lacks the 135 tensors of the two extra files; no name is in two files, so `safetensors.Checkpoint`,
+  which opens every `*.safetensors`, sees them all.
+- Every one of the 75751 trellis groups is mul1 with `suh` and `svh` F16: no `su`/`sv`, no 3inst, no mcg, no half
+  width. The marker is a scalar I32 of four bytes holding 0x83DCD12D (the recipe says zero-size).
+- Dense, under `model.language_model.layers.L.`: `self_attn.q_proj` [160, 768, 80] (K 2560, N 12288),
+  `k_proj` and `v_proj` [160, 32, 80] (N 512), `o_proj` [384, 160, 80] (K 6144), all 5 bits;
+  `self_attn.indexer.index_qk_proj` [160, 40, 48], 3 bits; `linear_attn.in_proj_qkv` [160, 640, 80],
+  `in_proj_z` [160, 384, 80], `out_proj` [384, 160, 80], 5 bits. `lm_head` [160, 15520, 80]: 5 bits, N 248320,
+  397 MB, no bias. `mtp.fc_embedding`, `mtp.fc_hidden` [160, 160, 64]: 4 bits. `mtp.layers.0.` as a main
+  attention layer.
+- Experts: `mlp.experts.E.{gate_proj,up_proj}` [160, 40, 48] and `down_proj` [40, 160, 48], 3 bits, all 512 of
+  every layer (no layer mixes widths in this revision); `mlp.shared_expert.*` the same shapes at 5 bits. In a
+  shard a group is `suh`, `svh`, `mul1`, `trellis`, and experts follow each other in name order (10, 100, 101).
+  The routers `mlp.gate.weight` F16 [512, 2560] and `mlp.shared_expert_gate.weight` F16 [1, 2560].
+- fp16 linears: `{attn,mlp}_hyper_connection.{input_mix_weight_down [320, 10240], input_mix_weight_up [10240, 320],
+  block_inject_weight [4, 10240]}.weight`, `linear_attn.in_proj_{a,b}.weight` [48, 2560], `ple.key_proj.weight`
+  [10240, 2560], `ple.value_proj.weight` [2560, 2560], `ple.conv1d.weight` [10240, 1, 4]. BF16:
+  `embed_tokens.weight`, `linear_attn.{conv1d.weight, A_log, dt_bias, norm.weight}`.
+- Norms: `hc_norm.weight` F16 [10240]; `q_norm`, `k_norm` BF16 [256]; `indexer.{q,k}_layernorm` BF16 [128];
+  `ple.norm_{key,query,conv}` BF16 [10240]; `mtp.pre_fc_norm_embedding` BF16 [2560], `mtp.pre_fc_norm_hidden` F16
+  [10240]. Centred, by their means: -0.06, 0.28, -0.11, -0.76, -0.33. `linear_attn.norm.weight` is not (0.97),
+  and TensorFold reads it plain.
+- The n-gram table is at layer 1 (`ple_layer_ids` [2] counts from one):
+  `model.language_model.layers.1.ple.ple_embedding.ngram_embedding.shard_{0..127}.trellis` I16 [2500012, 51] (one
+  fp16 scale and 160 values at 5 bits a row), contiguous in shard order, 320001536 rows; `head_bias` F16 [16, 160],
+  `head_offsets`, `head_vocab_sizes` I64 [16], `layer_multipliers` I64 [3]. Sharded, not the one tensor the recipe
+  also describes. The file's metadata: `format exl3_ngram_trellis`, `K 5`, `codebook mul1`.
+- The patch file: `mtp.hyper_connection_mixer.{hc_norm, input_mix_weight_down, input_mix_weight_up}.weight`.
+- config.json: `quantization_config` at the top level: `version 1.4.4`, `bits 3.05`, `head_bits 5`, `codebook mul1`,
+  `out_scales always`, `mtp_bits 3`, and `vision_bits 5` and `calibration`, which TensorFold does not read.
+  `mtp_bits` is the MTP layer's experts': `fc_embedding` and `fc_hidden` are 4 bits and its attention 5.
+- Vision (out of scope here): 987 tensors under `model.visual.`, trellises at 5 bits with K 1152 or 4352 or 4608
+  and an F16 `bias` each, the only biases in the pack.
+
+Remaining, for the next workstreams:
+
+- WS-02, WS-03: a trellis' data begins on no 4-byte boundary of the file (a shard's header length is odd), so
+  the kernels' 32-bit words are a copy, which the upload is. `Strides` and `Plan` give the launchers' arguments;
+  `Order.strips` is the dense kernels' layout and `strips` makes it. `Linear.forward` is the exact product: the
+  device rounds the rotated input to fp16 and sums in fp32, so the test's tolerance is a multiple of the summed
+  magnitudes.
+- WS-04: `flash_next/config.zig`'s `quantization` still refuses `exl3`; `exl3.Config.parse` reads the block.
+  `exl3.Diagnostic` repeats `config.Diagnostic`'s shape so that `exl3.zig` imports nothing of the model: one of
+  them can become the other's alias. `Config.detect` parses the 96 MB sidecar only where config.json has no
+  block.
+- WS-05: the success criterion on real tensors was met by hand on three; the exporter can repeat it on the pack.
+
+### 2026-10-05, WS-02 the dense kernels off ATen (Claude subagent, branch `spec-014-exl3-dense`)
+
+Written by the subagent at the coordinator's request.
+
+- Changed: `kernels/exl3/decode.cuh` and `kernels/exl3/linear.cu` (new), `kernels/zs/abi.h`, `build.zig`,
+  `src/exl3_device.zig` (new), `src/cuda.zig` (the three `extern` decls), `src/main.zig` (the test list),
+  `src/exl3.zig` (`rotate` and the fixture reader `fx` made public for the device tests, nothing else),
+  `AGENTS.md`, `kernels/AGENTS.md`, `src/AGENTS.md`.
+- The kernels: `decode.cuh` is TensorFold's file under one provenance line; `linear.cu` keeps TensorFold's device
+  code byte for byte (`diff` of the span from `#include "decode.cuh"` to `unpack_kernel`'s end is empty), with
+  the header, the includes and everything from `dtype_of` on rewritten: `zs::View` for `at::Tensor`,
+  `zs::stream()`, and `linear.cpp`'s checks as `ZS_REQUIRE` in three entry points, `zs_exl3_rot_in`,
+  `zs_exl3_linear`, `zs_exl3_unpack`. TensorFold's flag `--expt-relaxed-constexpr` is carried in `build.zig`.
+- The wrapper, `exl3_device.Linear`: `init(gpa, staging, host, max_rows)` from an `exl3.Linear` (the trellis
+  through `exl3.strips` as u32 [N/128, K/16, 8, 8 x bits]; `suh`/`svh` as stored, or sign words expanded; the
+  bias; `exl3.Plan.of` and the strips' `Strides`), owning its scratch (rotated rows fp16 [max_rows, K], the
+  splits' sums fp32 [splits, min(max_rows, 128), N], counters [8, N/128]); `forward(x, out)` with x fp16, bf16
+  or fp32 and out any of the three; `prefill` is `forward` (the decision above); `unpack`. `Staging` is the host
+  memory a trellis passes through, kept from one linear to the next.
+- Departures from TensorFold, said in the code: (1) `forward` takes more than 128 rows by launching `linear`
+  again for each further 128 (`rot_in` once for all), where `Exl3Linear.__call__` refuses them: a row's bits do
+  not know its launch, and the test below holds it. (2) Two checks beyond `linear.cpp`'s: a bias has N elements,
+  and the strides keep the last tile inside T. (3) T is `ZS_U32` where TensorFold takes int32. (4) The scratch
+  is the linear's own, never allocated in a call.
+- Evidence: `zig build test --summary all` 146 passed, 15 skipped (the checkpoint ones), no checkpoint set;
+  `-Dtest-filter="EXL3 kernels"` runs this file's seven. `zig test src/exl3.zig` still 15, no GPU.
+  `zig build check-specs` passes.
+  - unpack: all 27 codebook and width combinations, a [16, 24]-tile random trellis in the stored order and in
+    strips, equal to `exl3.unpack` bit for bit, with the fixture's four tiles of each combination placed inside
+    and compared with TensorFold's own values.
+  - against the host (`exl3.Linear.forward`, fp64): the 27 combinations at K 256, N 256 (one range) and K 1024,
+    N 128 (two splits), 19 rows, cycling fp16 scales or sign words and bias or none; mul1 at the pack's shapes
+    and plans: (2560, 512) 5 bits (4, 4), (2560, 640) 3 bits (4, 4), (2560, 2560) 4 bits (4, 4), (6144, 2560)
+    5 bits (8, 4), (1024, 8192) 5 bits (1, 8), (128, 384) with 130 rows. Three comparisons a row: the rotated
+    rows the device kept, within half an fp16 step (0.98 of it was seen: the bound is the real one); the
+    output against the fp64 product of those very fp16 rows, within 1e-6 of the summed magnitudes (4e-8
+    seen); the output against the exact product, within 2^-11 of the summed magnitudes, the fp16 rounding of
+    the rotated input at its worst (2^-16.5 seen). The counters are zero after every call.
+  - TensorFold's own `forward`: the fixture's three layers (3inst at 3 bits; mcg at 4 with `su`/`sv` and a bias;
+    mul1 at 2.5 with a bias) against its `y`, and the first one's W_q bit for bit.
+  - a row alone: 300 rows each launched alone, then the first M together for every M from 1 to 128 and 129,
+    200, 300, every row bit for bit, on ten linears: mul1 at 5, 3, 4 bits on the three kinds of plan (four
+    splits, one range, eight warps) and 1, 2 (mcg), 2.5, 6 (3inst), 7, 8 (mcg) bits for the kernel's three ways
+    to load a k step.
+  - x as fp16, bf16 or fp32 holding the same values: the same bits; y as bf16 or fp16: the fp32 output rounded.
+  - On the pack, which finished downloading (`ZSPARK_FLASH_NEXT_EXL3_3_05BPW=<snapshot dir>`, two shards mapped, no
+    load): layer 3's `q_proj`, `k_proj`, `o_proj`, `index_qk_proj`, expert 10's `gate_proj` and `down_proj`,
+    layer 0's `in_proj_qkv` and `in_proj_z`, `mtp.fc_embedding`: W_q bit for bit and three rows within the same
+    tolerances (product: 0.01 of the allowed 2^-11). Their plans: `q_proj` and `in_proj_qkv` (1, 8); `k_proj`,
+    `index_qk_proj`, `in_proj_z`, an expert's `gate_proj`, `fc_embedding` (4, 4); `o_proj` (8, 4); an expert's
+    `down_proj` (1, 4).
+- Mutations, each seen to fail (the tests named by their subject): the stored trellis uploaded where the strips
+  go, and the stored order's strides over the strips (host, pack's shapes, fixture); the two strides swapped in
+  `unpack` (unpack, fixture); `suh[5]` or `svh[7]` made one (host, pack's shapes, fixture); the sign words'
+  polarity (host, fixture); the bias dropped (host, pack's shapes, fixture); mcg's codebook id for 3inst and
+  the reverse (host, fixture); two warps past 16 rows, a plan by the row count (a row alone, and only it); a
+  later launch reading the first launch's rotated rows (a row alone, pack's shapes); `rot_in`'s grid a block
+  short (five tests); the split count not passed to the kernel (four).
+- Not run: nothing timed (no tok/s, no GB/s); `lm_head` (397 MB, plan (1, 8)) not put through the host decoder;
+  no launch inside a `cuda.Graph` capture, though the launchers only use `zs::stream()`.
+
+Remaining, for the next workstreams:
+
+- WS-03: `decode.cuh` is in `kernels/exl3/` for `experts.cu` to include as TensorFold's does; add the new
+  sources to `build.zig` with `--expt-relaxed-constexpr`. `exl3_device.zig` is where the expert table's wrapper
+  can sit, or beside it. The down projection of an expert alone (640, 2560) takes plan (1, 4) on the dense
+  kernel: usable as a reference for the grouped kernels' tests, as is `tx.expectProduct`'s three-way check.
+- WS-04: `exl3_device.Linear` has `forward` and `prefill` with `bf16.Linear`'s signatures, so it fits where
+  those go; q/k/v and the indexer's projection are separate linears here, each with its own `suh` and so its
+  own `rot_in` (how TensorFold stacks them was not read in this workstream). A linear
+  owns max_rows x K x 2 bytes of rotated rows: at 512 rows and K 6144 that is 6 MB a linear; share one scratch a
+  model if that adds up. `lm_head` takes (1, 8) and no `part`. One `Staging` for the whole load.
+
+### 2026-10-05, WS-03 the expert kernels and the expert table (Claude subagent, branch `spec-014-exl3-experts`)
+
+Written by the subagent at the coordinator's request.
+
+- Changed: `kernels/exl3/experts.cu`, `experts_grouped.cuh`, `decode.cuh` (new), `src/exl3_experts.zig` (new),
+  `build.zig` and `src/main.zig` (a line each), `kernels/AGENTS.md`, `src/AGENTS.md`, `NOTICE`.
+- Kernels: TensorFold's device code unchanged (609ca41, `cuda/exl3/`), the three codebooks; the ATen launchers
+  are C ABI entry points on `zs::View`, with `experts.cpp`'s checks: `zs_exl3_experts_grouped`, `_dequant`,
+  `_group`, `_rot_in`, `_gateup_epilogue`, `_down_epilogue`, `_combine`, `_down_combine`. `decode.cuh` is
+  TensorFold's with a provenance line; the expert kernels do not include it (theirs is in `experts_grouped.cuh`).
+- `src/exl3_experts.zig`: `Table` (a layer's trellises uploaded as stored, each at a 256-byte boundary; an address
+  and a width per matrix and expert; the scales as fp16 with sign words expanded; `init` from three lists of
+  `exl3.Linear`, the shared expert being whichever entry the caller lists, last for Flash Next), `Scratch`,
+  `Table.forward` (y fp32 [rows * slots, dims], unsummed) and `forwardSum` (the weighted sum in slot order),
+  `combine`, `unpack`, `Setting.of`. Rows beyond `Scratch.rows` go in further calls; `window` is 1024.
+- Departures from TensorFold, said in the code: the launchers (above), x's row stride read from the view; one
+  object for the three codebooks where TensorFold builds one each; `Setting.of` without the two `nt` 4 candidates,
+  which no N that is a multiple of 128 reaches; y written to the caller's view a window at a time, no copy;
+  `Table.init` refuses a bias, a second codebook in a layer, and lists of different lengths or shapes.
+  `-lineinfo` is carried.
+- Evidence: `zig build test --summary all` with `ZSPARK_FLASH_NEXT_EXL3_3_05BPW` only (no full load): 172 passed, 14
+  skipped of 186; 8 of them are this file's. `zig test src/exl3.zig` (15), `zig build check-specs`, `zig fmt`.
+  - The kernel's lane decode against `exl3.unpack`, bit for bit: 3 codebooks by 11 widths.
+  - Routed and shared against `exl3.Linear`'s fp64 values: six layers (the three codebooks, mixed widths per
+    matrix and expert, sign words, a clip, both activations), the model's top-k (`zs_fn_moe_topk`) with the shared
+    expert as the last slot, rows 1 to 150 with a scratch of 64, a strided x. Tolerance 2^-13 of the summed
+    magnitudes; the worst error seen is 0.05 to 0.12 of it, and the test refuses a worst of zero.
+  - A row alone and every row as a step equal the window, bit for bit; 1024 rows by 13 slots (the grouping's
+    widest shared memory) against steps.
+  - The weighted sum equals the host's fma chain bit for bit, from `forwardSum` and from `forward` then `combine`.
+  - A pick outside the table leaves its slot untouched. The table's refusals.
+  - The pack (complete on spark-a): layer 0's 513 experts in one table, rows 1 and 24, a row alone bit for bit,
+    four pairs (the shared expert at 5 bits among them) against the host: worst 0.008 to 0.014 of the tolerance.
+- Mutations that each failed a test, then were reverted: a merge's high and low words swapped; x's rows taken as
+  contiguous; a trellis address one word late; the next expert's scales; output scales negated; up with gate's
+  `svh`; the input rotation without 1/sqrt(128); a later window's y offset by row, not by pair; a single row
+  summed in two splits (caught only by the bit comparison); the codebook fixed to mcg; the clip ignored; the
+  activation ignored; the weighted sum in reverse slot order.
+- Not done or not run: no full model load; CUDA graph capture of these launches is untried; `.bf16` activation
+  (GLM's) is checked against the host with an allowance for its roundings and by its bits differing from
+  `.f32`'s, not against TensorFold; `_dequant` is used by `unpack` in tests only.
+
+Remaining for WS-04:
+
+- Build the three `[]exl3.Linear` lists (512 routed in index order, then the shared expert), keep the trellis
+  ranges readable until `Table.init` returns, set `limit` and `activation` from the config (Flash Next: inf,
+  `.f32`), and give `forward` the router's picks with 512 in the last slot. A row's picks must be distinct.
+- The entry points are `extern fn` beside the wrapper, not in `kernels/zs/abi.h` or `cuda.zig`, to keep this
+  branch's merge with WS-02 to one line a file; they can move.
+- `decode.cuh` may differ from WS-02's copy in its header line only; keep either.
+
+### 2026-10-05, WS-05 first part: TensorFold's references on the pack (Claude subagent, branch `spec-014-exl3-reference`)
+
+Written by the subagent at the coordinator's request. Run on spark-b; nothing under `src/` was touched.
+
+- Changed: `tools/reference/flash_next_export.py`, `tools/reference/AGENTS.md`, this spec.
+- The exporter takes the pack as it takes an NVFP4 checkpoint: `weights.load` hands it to TensorFold's
+  `exl3.load`, and the hooks fit unchanged. What was added: `build_kernels(exl3=...)` on the path without
+  `--engine`; `--prefill` (TensorFold's prompt path on the same rows: `NAME.prefill`, `prefill_vs_serial` in
+  `NAME.json`); `--score FILE` (`score.json`); `--tensorfold-commit` for a tree without `.git`; a `memory` key
+  in `NAME.json`. Without the new options an NVFP4 export runs the same code as before (not re-run).
+- TensorFold loaded the pack with no workaround: version 1.4.4, the `vision_bits` and `calibration` keys, the
+  128 n-gram shards, the 4-byte marker and the patch file are all read or ignored by its own loader.
+- TensorFold used: 0.6.5, the tree at spark-b's `~/repo/TensorFold` mounted into `tensorfold-glm53:v0.6.0`
+  (the image itself holds 0.6.0, unused). That tree has no `.git`; its 920 files equal commit 609ca41's by
+  sha256, compared with spark-a's checkout, and no other file is in it. torch 2.13.0a0+9186a08b2c.nv26.07,
+  triton 3.7.1.
+- The pack on spark-b: copied from spark-a with `rsync -a` to the same path (the model directory without its
+  `*.incomplete` leftovers, and the 12 files under `hub/blobs/` its symlinks point at); the 25 files' sizes
+  equal spark-a's, 85139442313 bytes.
+- The references: spark-b `~/.cache/zspark/reference-exl3/`, 4.1 GB, 45 files and `logs/` (each run's output and a memory sample every 5 s). The ids are the
+  NVFP4 reference's (`short` 5, `primes` 23, `sky` 23). For each: `NAME.serial`, `.window`, `.window16`
+  (55 MB for `short`, 254 MB for the others; 654 tensors), the same three again as `.f32` (the same tensors:
+  the pack's expert slots are fp32 on the decode path whatever `--moe-slots` says), `NAME.prefill` and
+  `.prefill.f32` (40 and 181 MB), `NAME.mtp.serial`, `.mtp.window`, `.mtp.chain` (4 to 20 MB), `NAME.json`,
+  `NAME.f32.json`, `NAME.mtp.json`; `primes.sampled.json`, `sky.sampled.json`; `score.json`.
+- The primary reference is the decode path: serial steps equal both windows at all 653 points, bit for bit, and
+  a repeated serial run equals the first; no value is non-finite. The MTP head: serial absorbs equal the window
+  at all 29 points.
+- TensorFold's prompt path against its own serial steps, the same rows (`prefill_vs_serial`; distances
+  accumulate along the forward, RMS of the difference over the reference's RMS, then the largest difference):
+
+  | Point | `short` (5 rows) | `primes` (23) | `sky` (23) |
+  | --- | --- | --- | --- |
+  | first to differ: `layers.0.block.projection` | 1.2e-4, 0.031 in 31.75 | 1.2e-4, 0.031 in 34.75 | 1.1e-4, 0.031 in 34.75 |
+  | `block.projection`, worst layer | 0.112 (36), 3.5 in 44.75 | 0.049 (36), 2.1 in 58 | 0.020 (44), 2.7 in 52.75 |
+  | `block.branch`, worst layer | 0.301 (42) | 0.130 (32) | 0.039 (42) |
+  | `mlp_hc.mixed`, worst layer | 0.301 (47) | 0.109 (33) | 0.045 (43) |
+  | `moe.logits`, worst layer | 0.031 (47) | 0.011 (33) | 0.004 (40) |
+  | rows with other experts, of rows x layers | 140 of 240 | 172 of 1104 | 92 of 1104 |
+  | `h_mid`, worst layer | 0.272 (47) | 0.055 (43) | 0.032 (44) |
+  | `final.h` | 0.294, 1.56 in 8.9 | 0.041, 1.09 in 39.75 | 0.029, 1.0 in 39.75 |
+  | `logits`, last row | 0.286, 3.7 in 15.5 | 0.094, 0.83 in 22.5 | 0.033, 0.63 in 24.1 |
+
+  Equal on both paths: the embedding and layer 0 up to its first read-out (`h_in`, `attn_hc.mixed`,
+  `attn_hc.inject`). The first token after the prompt is the same on all three. Over the 5337 score ids, a row
+  at a time: `final.h` 10.4% mean (median 9.7%, 99th percentile 24%, worst 66%), logits 9.6% mean, largest logit
+  difference 1.3 mean and 10.7 worst, 5002 rows with the same first-ranked token.
+- What that means for `zspark compare`: against `NAME.serial`, a block from TensorFold's input to it, the
+  tolerance NVFP4 uses. Against anything TensorFold's engine produced after a prompt (`greedy_engine`, the
+  sampled replies, `engine_drafts`, `engine_vs_export`), only loosely: the engine's greedy reply, the same
+  drafted or not, leaves the decode path's `greedy_decode_path` after 21 of 64 tokens on `sky` and 19 of 32 on
+  `primes` (the 15-token answer is the same), and the sampled replies after 30 and 18 of 64. The success
+  criterion's greedy reply is `greedy_decode_path`.
+- The score, 5336 tokens of `score_ids.txt`, as `zspark score` computes it: decode path nll 2.15610, ranked first
+  0.5517 (second half 2.13805, 0.5399); TensorFold's prompt kernels in 16-row chunks 2.15746, 0.5517 (2.14011,
+  0.5388). 128 tokens rank first on one path only.
+- Measured (page cache warm from the copy; one process on the GPU): load 22.8 s without drafts (weights 15.7 s,
+  47.84 GiB), 25.6 to 30.2 s with the MTP head and 21 graphs (48.94 GiB); 56.0 GiB allocated after the load
+  with a 262144-token window, 57.7 with drafts; peak 64.5 GiB allocated in the main export, 66.0 with drafts;
+  the process held 66600 MiB by `nvidia-smi` (68197 with drafts) and the host had 75.4 GB used at the peak, the
+  32.6 GB table in the page cache beside it. Decode, TensorFold's own numbers: serial 32.1 to 32.8 tok/s;
+  drafted, greedy 65.3 and 75.2 tok/s on `primes` (33 drafted, 21 accepted, 10 rounds), 70.1 and 71.4 on `sky`
+  (67, 41, 22 rounds); drafted, sampled 66.4 tok/s. A 23-token prompt prefills in 0.13 to 0.15 s. Scoring ran
+  5337 rows in 22.6 s on the decode path (16-row windows) and 37.8 s on the prompt kernels (16-row chunks).
+- Not done or not run: nothing on zspark's side (`zspark compare`, `score`, the gated tests, `README.md`); no
+  cold-cache load time; no long cold prompt timed; the NVFP4 export was not re-run with the changed exporter;
+  the success criterion "the format reader agrees on real tensors at every width" was not repeated from the
+  exporter; `zig build test` not run (no Zig source changed).
+
+Remaining for WS-05's zspark half, after WS-04:
+
+- `ZSPARK_FLASH_NEXT_EXL3_3_05BPW` and `ZSPARK_REFERENCE_EXL3_3_05BPW=~/.cache/zspark/reference-exl3` on spark-b (the pack is
+  there too), or the directory copied to spark-a (4.1 GB). `compare.zig` opens `primes.serial.f32.safetensors`
+  and `sky.f32.json`: both exist. `moe.y` is F32 [R, 11, 2560].
+- `zspark score` on the 5337 ids beside 2.15610 (TensorFold's decode path) and the NVFP4 checkpoint's 2.1425.
+
+### 2026-10-05, WS-04 Flash Next loads and decodes from the pack (Claude subagent, branch `spec-014-exl3-model`)
+
+Written by the subagent at the coordinator's request. The branch starts at ebab706; main has since gained WS-05's
+first entry (bdab448), which this branch does not carry: the coordinator merges.
+
+- Changed: `src/flash_next/config.zig`, `layout.zig`, `ple.zig`, `moe.zig`, `hc.zig`, `model.zig`, `forward.zig`,
+  `compare.zig`; `src/f16.zig` (new), `src/face.zig`, `src/requantize.zig`, `src/cuda.zig`, `src/main.zig`;
+  `kernels/bf16/gemm.cu`, `kernels/flash_next/ple.cu`, `kernels/flash_next/hc.cu`; `README.md`, `AGENTS.md`,
+  `src/AGENTS.md`, `kernels/AGENTS.md`, `src/flash_next/AGENTS.md`.
+- Config and layout: `quantization: exl3` is accepted; the layout resolves every linear as `.exl3` (a trellis)
+  or `.f16`, the embedding as BF16, the norms as centred, the n-gram table's 128 I16 shards, the MTP head.
+  `zspark info` on the pack: 75587 trellis linears (45.628 GiB), 470 fp16 (1.426 GiB), 1 bf16 (the embedding,
+  1.184 GiB), the table 30.399 GiB, 48 of 48 layers, MTP found, nothing missing; 0.6 s.
+- fp16 linears: `kernels/bf16/gemm.cu` is templated on the element (`zs_f16_gemm`, with `zs_f16_from_bf16` for
+  the rows), `src/f16.zig` wraps it, `face.zig` takes `.exl3` parts (a run each) and `.f16` parts (stacked).
+- N-gram table: the stored rows (a scale word and 5-bit codes, 51 words a row on the pack) are gathered from the
+  mapping as stored and decoded on the device by `zs_fn_ple_rows`, hand-written (its header says why: a hashed
+  walk of a tail-biting ring, not a GEMM), with `ple.decodeRow` as the host reference. The shards are left out of
+  `Checkpoint.hold`, so the table is never copied to the heap: host MaxRSS of a whole load is 7.5 to 10 GB.
+- Experts: `moe.Weights.stored` is NVFP4 tables or one `exl3_experts.Table` with the shared expert last, run as
+  every row's last pick; `zs_fn_hc` write-back reads it from y's last slot when no shared buffer is given.
+- Draft head: the head's 79591 draft rows decoded through the head itself (identity rows in, 20 launches of 128)
+  and requantized to NVFP4 (`DraftHead.initDecoded`, `requantize.Weight.f32`); about 1 s of the load.
+- Model: `Model.loadWith` wires all of it; `zspark info`, `chat`, `generate` and `score` run on the pack (`trace` untried).
+  Prompts take the same kernels as steps.
+
+Evidence (spark-a, every GPU command under `flock ~/.cache/zspark/gpu.lock`):
+
+- `zig build test --summary all`: 186 pass, 18 skip of 204 without checkpoints; 196 pass, 8 skip with
+  `ZSPARK_FLASH_NEXT` and `ZSPARK_REFERENCE` (NVFP4, MaxRSS 56 G, unchanged behaviour: 191 and 4 on main before
+  this branch's 9 tests); 190 pass, 14 skip with `ZSPARK_FLASH_NEXT_EXL3_3_05BPW` and `ZSPARK_REFERENCE_EXL3_3_05BPW` (MaxRSS 7 G).
+- New tests: an fp16 linear against the host and a row alone; a face of trellis and fp16 parts; the write-back
+  without a shared buffer; an EXL3 table's rows on the device as on the host, a row alone as among others; a
+  packed PLE (rows as stored, decoded, projected in fp16, centred norms against the host), a window against its
+  steps; a random EXL3 model (DeltaNet layers, trellis and fp16 faces, an expert table): a window equals its
+  serial steps whatever prefix is kept, through graphs, and wide prompt windows; the draft rows against the
+  head's own logits; gated: the pack's first layers to its first attention layer (graphs equal eager, wide
+  windows of 320, 130 and 33 rows equal steps, a snapshot), the pack's PLE, the whole pack against TensorFold.
+- Against TensorFold's references (`~/.cache/zspark/reference-exl3`, each block from the reference's input,
+  `primes`): bit-exact are the embedding, both injections, the projections (0 of 17.5M values differ), the
+  picks, the experts' slots including the shared one (0 of 31M), the final mix and the logits. Within tolerance:
+  `h_after_ple` (1 value of 235520, 8.9e-7 relative), `h_in` and `h_mid` 2.8e-3, `attn_mixed` 4.6e-4, `block_out`
+  2.2e-4, `branch` 1.2e-3, `mlp_mixed` 3.5e-4, `final_h` 1.9e-3, the router's logits 2.6e-6. `sky` greedy: the
+  first 21 of 64 tokens are `greedy_decode_path`'s, parting at a tie (21.5 against 21.5 in zspark's row); all 64
+  are `greedy_engine`'s. Sampled: 36 of 64 (`primes`) and 30 (`sky`) before the first difference.
+- `zspark score` on the 5336 ids: nll 2.15689, ranked first 0.5497 (TensorFold's decode path 2.15610, 0.5517).
+- `zspark chat` on the pack, greedy: loads in 10.4 to 11.9 s; "What is the capital of France? Answer in one
+  sentence." gives "The capital of France is Paris."; a 128-token reply is the same bytes drafted, `--serial`,
+  `--serial --eager` and `--full-head`; serial 33.4 tok/s, eager 29.8, drafted 57.4 with the draft head (49
+  steps, 79 of 116 drafts kept) and 52.6 with the main head. TensorFold: 32 to 33 serial, 65 to 75 drafted.
+- Mutations that each failed a test, then were reverted: the rows kernel's hash multiplier; its ring not
+  wrapped; head 0's bias for every head; the stored rows gathered one word short; centred norms read as gammas;
+  the write-back's shared rows one slot early; the fp16 matmul's rows truncated toward zero; a face's trellis runs
+  merged; the expert table run on one row fewer; a draft row taken from the next token's column; the draft rows'
+  batches written over the first columns; the fp32 rows read one row late. One survived: the rows kernel's final
+  add rounded toward zero, which the fp16 cast hides on the test's data.
+
+Departures from TensorFold, said in the code: prompts through the decode kernels with fp32 expert slots (its
+prompts take a prefill GEMM with bf16 slots); the fp16 linears on the CUTLASS GEMM with zspark's K split, not
+`f16_split`; the draft head requantized to NVFP4, not MLX affine 4-bit, and its rows read as the head's bf16
+output of identity rows; an F16 embedding refused.
+
+Not done, not run, or uncertain:
+
+- `zspark compare DIR REF` on the pack fails with `error: MemoryMappingNotSupported`; not investigated. The
+  comparison ran through `compare.zig`'s gated test.
+- No synthetic EXL3 layout fixture (the trellis shapes need multiples of 128): the layout on a pack is evidenced
+  by `zspark info` and the gated tests. The random EXL3 model has no PLE and no attention layer.
+- The one differing `h_after_ple` value is put down to fp16 summation order; not proven.
+- Device memory was not read from the device; the 48 GiB is the sum of the tensors. `--kv-dtype` other than bf16,
+  `zspark serve` and long contexts are untried on the pack. Drafted speed is below TensorFold's.
+
+Remaining for WS-05: `zspark compare` on the pack (the error above), the measurements against TensorFold in
+the README, `tools/reference/AGENTS.md`.
+
+### 2026-10-05, WS-05 second part: compare, the greedy replies, the measurements (Claude subagent, branch `spec-014-exl3-measure`)
+
+Written by the subagent at the coordinator's request. The branch starts at 8425ba0. spark-a, every GPU command
+under `flock ~/.cache/zspark/gpu.lock`, `-Doptimize=fast` for every timing; TensorFold was not run.
+
+Changed: `src/safetensors.zig`, `src/main.zig`, `src/exl3.zig`, `src/exl3_device.zig`, `src/exl3_experts.zig`,
+`src/flash_next/model.zig`, `src/flash_next/compare.zig`; `README.md`, `src/AGENTS.md`,
+`src/flash_next/AGENTS.md`, `tools/reference/AGENTS.md`.
+
+Fixes, each with a test and a mutation seen to fail:
+
+- `zspark compare DIR REF` failed with `MemoryMappingNotSupported` because REF was given as the reference
+  directory: a directory opens for reading and only its mapping fails (ENODEV). Not particular to a pack.
+  `safetensors.File.open` now refuses a directory (`error.IsDir`), and `compare` says what REF is, and names a
+  missing file, a file that is not safetensors and one without `ids`. Test: "a directory is refused as a file,
+  by name"; mutation: the open without `allow_directory = false` gives the old error.
+- `compare` on a pack skipped the shared expert's slot of `moe.y` (the CLI did not pass `shared_in_y`, the gated
+  test did). It is counted now; evidence is the table below (0 of 31.1M values differ with the slot counted).
+- Start-up: `exl3.Linear.parse` read each group's 4-byte marker through the mapping, 75,587 pages, and
+  `Checkpoint.hold` empties the page cache after every load, so every start paid them: 75,598 major faults,
+  9.3 GB read, 20.6 s before the load began (`zspark info` 20.6 s; a chat's first token after 31.2 s). `parse`
+  now reads headers only and `Linear.marked` checks the marker once the bytes are held, in `exl3_device.Linear
+  .init` and `exl3_experts.Table.init` (`error.UnsupportedCodebook`, named by `model.faceOf`). After: `info`
+  0.38 s, first token after 11.4 s, wall 13.3 s, host MaxRSS 7.38 GB to 3.26 GB. Mutations that each failed a
+  test: `parse` refusing the marker again; `marked` always true (three tests); the check removed from
+  `exl3_device.Linear.init`; the check disabled in `Table.init`.
+
+`zspark compare` on the pack (each block from the reference's input; relative rms at the worst layer, and the
+values that differ where few do). The CLI's documented tolerance is 3e-3 and `compare.zig`'s bound 6e-3; neither
+was changed.
+
+| Point | `short` (5 rows) | `primes` (23) | `sky` (23) |
+| --- | --- | --- | --- |
+| `embed_h` | exact | exact | exact |
+| `h_after_ple` | exact | 8.9e-7 (1 of 235520) | exact |
+| `h_in` | 2.47e-3 | 2.79e-3 | 2.79e-3 |
+| `attn_mixed` | 3.10e-4 | 4.59e-4 | 3.20e-4 |
+| `attn_inject` | exact | exact | exact |
+| `projection` | exact (0 of 3.8M) | exact (0 of 17.5M) | exact |
+| `block_out` | 3.1e-5 | 2.2e-4 | 2.5e-4 |
+| `branch` | 2.8e-4 | 1.18e-3 | 1.29e-3 |
+| `h_mid` | 2.94e-3 | 2.78e-3 | 2.73e-3 |
+| `mlp_mixed` | 5.7e-4 | 3.5e-4 | 3.6e-4 |
+| `mlp_inject` | exact | exact | 7.0e-4 (1 of 4416) |
+| `moe_logits` | 2.56e-6 | 2.64e-6 | 2.63e-6 |
+| `moe_picks` | exact | exact | exact |
+| `moe_weights` | 6.0e-4 (1) | 5.5e-4 (3) | 5.1e-4 (4) |
+| `moe_y`, the shared slot counted | exact | exact (0 of 31.1M) | exact |
+| `final_h` | 1.60e-3 | 1.94e-3 | 2.09e-3 |
+| `final_mixed` | 5.4e-6 (1 of 12800) | exact | 1.1e-4 (116 of 58880) |
+| `logits` | exact | exact | exact |
+
+No pick differs on any of the three; the worst point is `h_mid` on `short`, 2.94e-3, under 3e-3. With `free`
+(zspark's own inputs, the differences adding up through 48 layers) the logits are 30% (`short`), 3.3% (`primes`)
+and 5.1% (`sky`) of their rms away and 1301, 1063 and 1071 picks differ: the size of TensorFold's own
+prefill-against-serial drift (29%, 9.4%, 3.3%). `zspark trace` on the pack: a 23-row window equals its serial
+steps bit for bit.
+
+Greedy replies (goal 4). zspark's reply is the same tokens serial, eager and drafted.
+
+- `sky`: all 64 tokens are TensorFold's `greedy_engine`'s; the first 21 are `greedy_decode_path`'s, and after
+  TensorFold's tokens 63 of 64 choices are its own. Token 21 (position 44) is a decoded row on both sides (the
+  prompt is one 23-row window in zspark and 23 one-row steps in TensorFold, both on the decode kernels). In
+  zspark's row 8964 and 43034 are both 21.5 as bf16 and the lower id is taken; before the rounding they are
+  21.54104 and 21.55498, so TensorFold's token is 0.0075 (3.5e-4 of the value) under the edge of the next step,
+  21.5625. zspark's row also ties at token 14, where both sides take the lower id.
+- `primes`: all 32 are `greedy_engine`'s; the first 19 are `greedy_decode_path`'s, the 15-token answer and its
+  end token among them, and 31 of 32 choices after its tokens are its own. Token 19 (position 42), in the turns
+  the model makes up after the answer: 248045 and 248046 are both 15.4375; before the rounding 15.44696 and
+  15.44205. TensorFold's token would need 0.027 more (1.7e-3 of the value) to reach 15.46875.
+- TensorFold's side: the references hold logits for prompt rows only, so its top two at these rows cannot be
+  read. torch's argmax returns the first maximum, so its row cannot have held the same tie: its two logits
+  differed by at least one bf16 step, from the differences upstream (2.8e-3 at the write-back into the streams,
+  3 to 5% in the free-running logits), which are larger than the 3.5e-4 and 1.7e-3 needed. That is an
+  inference, not a reading.
+- Verdict: goal 4 is met with a caveat. Every exported point is within the tolerance; the greedy replies are
+  TensorFold's served ones token for token, and its decode path's up to a bf16 tie in zspark's row (21 and 19
+  tokens, the counts at which TensorFold's own two paths part). The box is left unticked because TensorFold's
+  half of the two rows is unread. To read it: export `--case` ids of the prompt and the reply up to the parting,
+  whose last serial row is that row (`tools/reference/AGENTS.md`).
+- `compare.zig` now holds `primes` too (`Bounds.greedy` is a bound for each case) and prints both logits before
+  the rounding at any parting (`Bench.unrounded`). Measured there on NVFP4: published `sky` 64 of 64, `primes`
+  18 of 32 (token 18, in the made-up turns: 846 at 19.0 against 248045 at 18.5, no tie; the engine's too is
+  248045); hybrid (`~/.cache/zspark/hybrid/Qwen3.8-Flash-Next-NVFP4-hybrid`) `sky` 64 and `primes` 32.
+
+`zspark serve` on the pack (127.0.0.1:8011, stopped with SIGTERM, exit 0): `tools/reference/openai_exchange.py`
+ends OK: a streamed tool call (`get_weather` with `{"city":"Paris","days":3,"units":"c"}`, finish `tool_calls`),
+a second turn with 351 cached tokens, a stop string, `tool_choice: "required"` refused with a 400.
+`--kv-dtype fp8` and `fp8-nvfp4` both load and answer ("The capital of France is Paris.").
+
+Measurements (goal 5):
+
+| | zspark, EXL3 pack | zspark, NVFP4 | TensorFold, EXL3 pack |
+| --- | --- | --- | --- |
+| Load, `chat` (512-row buffers, 4096 context, MTP) | 10.5 to 10.8 s (9.2 `--serial`) | 21.1 to 21.3 s (19.8) | 22.8 s |
+| Load after the pack is evicted from the page cache | the same (direct reads; the cache is empty after every load) | not measured | not measured |
+| Wall, a short chat | 13.3 s | 24.6 to 27.2 s | |
+| Device, `nvidia-smi`, `chat` drafted / `--serial` | 58,252 / 56,509 MiB | 82,987 / 80,853 MiB | 56 GiB after load |
+| Device, with a 3930-token prompt | 58,991 MiB | 83,735 MiB | |
+| Device, `serve` (8192 context) after load / after replies | 58,235 / 58,468 to 58,696 MiB | not measured | |
+| Device, `generate` (16-row buffers, no MTP) | 49,262 MiB | | |
+| Host MaxRSS, `chat` | 3.26 GB (2.86 `--serial`) | 54.76 GB | |
+| Serial, `sky` / `primes` | 33.6 to 33.7 / 31.6 to 32.8 tok/s | 19.4 / 18.7 | 32.1 to 32.8 |
+| Drafted, `sky` 64 tokens, first reply | 60.5 to 62.8 tok/s (21 steps, 42 of 64 kept) | 37.2 to 37.4 (24 steps, 39 of 69) | 70.1 to 71.4 (22 rounds, 41 of 67) |
+| Drafted, `sky`, graphs already captured (`serve`) | 67.6 to 69.9 tok/s (43 of 62) | not measured | |
+| Drafted, `primes` 32 tokens (`generate`) | 59.1 tok/s (10 steps, 21 of 34) | not measured | 65.3 to 75.2 (10 rounds, 21 of 33) |
+| Drafted, `primes` to its end token (14 tokens, `chat`) | 97 to 108 tok/s | 76.7 | |
+| Drafted, a 133-token reply / a code reply | 55 to 57 / 84 to 87 tok/s | | |
+| A prompt of 3930 tokens, first met | 6.89 to 7.04 s (565 tok/s) | 3.87 to 3.88 s (1015 tok/s) | |
+| `zspark score`, 5336 tokens, bf16 | nll 2.15689, first 0.5497 | 2.1425 | 2.15610, 0.5517 (decode path) |
+| `score`, `--kv-dtype fp8` | 2.15731, 0.5510 | | |
+| `score`, `--kv-dtype fp8-nvfp4` | 2.16617, 0.5506 | | |
+
+`cudaMemGetInfo` is only in `zspark probe`; a loaded model's memory was read from `nvidia-smi`. A `score` run
+takes 62 to 64 s with its load (TensorFold: 22.6 s for the rows alone). The fp8-nvfp4 score is 0.009 above
+bf16's, over the 0.005 noise of spec 012, on the whole text; on the second half the three are 2.14267, 2.13658
+and 2.13676.
+
+Why drafted decoding looked slower than TensorFold's (57 against 65 to 75):
+
+- It was another prompt. The 57.4 tok/s of WS-04 is a 128-token reply (79 of 116 drafts kept) in a first reply
+  that captures its graphs as it goes. On TensorFold's two prompts acceptance is TensorFold's (42 of 64 against
+  41 of 67 on `sky`, 21 of 34 against 21 of 33 on `primes`, the same number of rounds) and zspark decodes at
+  60 to 63 tok/s in a first reply and 68 to 70 once the graphs exist, against 70 to 71.
+- Where a round goes (eager, synchronized at each point): a serial step is 34.8 ms (experts and router 9.5,
+  projections 9.0, both mixes 9.4, branch 2.3, head 1.65, block out 1.45); a 7-row window 51.9 ms, of which the
+  experts are 24.2 (2.45 ms a row more, over 48 layers) and the rest is flat (25.3 to 27.7). Replayed graphs: a
+  2-row window 33.8 ms, 3 rows 36.6, 5 rows 39.2, 7 rows 48.9; the draft head 6.2 ms a round. Nine windows that
+  captured took 0.41 s, 45 ms each: a first reply captures up to 22 graphs, 57 to 64 ms in all for the steps.
+- Nothing was changed: no small fix was found. Candidates, each keeping a row's bits: capture the step, window
+  and head graphs at load as TensorFold does (its 21 graphs), which is the whole first-reply gap; choose a greedy
+  token on the device instead of downloading a row's 0.5 MB of logits; the draft head's 6 ms a round.
+
+Tests: `zig build test --summary all` with `ZSPARK_FLASH_NEXT_EXL3_3_05BPW` and `ZSPARK_REFERENCE_EXL3_3_05BPW`: 195 pass, 16
+skip of 211 (59 s, MaxRSS 3 G). With `ZSPARK_FLASH_NEXT`, `ZSPARK_REFERENCE`, `ZSPARK_FLASH_NEXT_HYBRID` and
+`ZSPARK_REFERENCE_HYBRID` in a second invocation (the hybrid load after the published one is freed): 205 pass,
+6 skip of 211 (MaxRSS 56 G). Two tests are new. `zig test src/exl3.zig` 16 pass, `src/safetensors.zig` 5.
+
+Goals: 1 met (`chat`, `serve`, `generate`, `score`, `compare`, `trace` and `info` on the pack). 2 met: the
+pack's language model holds trellises of 3, 4 and 5 bits (75,277, 2 and 308) and one codebook (mul1), which are
+the three tensors WS-01 took against `format.py`; and every trellis linear the three prompts reach gives
+TensorFold's bits. 3 met (WS-04's tests, `trace`, the replies above). 4 met with the caveat above, unticked.
+5 met.
+
+Not done, not run, or uncertain:
+
+- TensorFold's logits at the two tie rows are not read (TensorFold was not to be run here).
+- The drafted gap to TensorFold in a first reply (about 12%) stands; the steady-state number is measured
+  through `serve` only, on one prompt.
+- A cold load was measured by evicting the pack with `posix_fadvise` (no sudo, no `drop_caches`); it equals the
+  warm one because every load leaves the cache empty. NVFP4's cold load, its `serve` memory and its steady-state
+  drafted speed were not measured.
+- The hybrid checkpoint's doc comment in `compare.zig` (greedy `sky` 31 of 64) no longer describes what the
+  reference directory gives (64 of 64, and the engine's 31); the bound was left and a dated note added. The
+  two other hybrid directories (`-readouts-fp8`, `-shared-fp8`) do not match `reference-hybrid` (`attn_mixed`
+  1.4e-2), as expected of other layouts.
+- The ABI tidy-up (WS-03's `extern fn` into `abi.h` and `cuda.zig`) was not done: `kernels/AGENTS.md` allows the
+  declaration beside its wrapper.
+- `--kv-dtype fp8-nvfp4` on the pack scores 0.009 above bf16; not looked into.
+- WS-05 stays In progress for the first item alone.
+
+### 2026-10-05, WS-05 third part: TensorFold's side of the two parting rows (Claude subagent, branch `spec-014-exl3-ties`)
+
+Written by the subagent at the coordinator's request. The branch starts at 4ed4251. spark-b, every GPU command
+under `flock ~/.cache/zspark/gpu.lock`; TensorFold read only.
+
+Changed: `tools/reference/flash_next_export.py` (`--candidates NAME=ID,ID`: `last_row` in `NAME.json`; nothing
+else it writes changes), `tools/reference/AGENTS.md`, a doc comment in `src/flash_next/compare.zig`.
+
+Exported into `~/.cache/zspark/reference-exl3/` (one load without the engine, 15 s, exit 0; log
+`logs/parting.log`): the cases `sky.parting` (44 ids: the prompt and the first 21 tokens of `sky.json`'s
+`greedy_decode_path`) and `primes.parting` (42 ids: the prompt and the first 19), each as serial steps and one
+window (0 of 653 points differ, a repeated serial run differs at none), with `NAME.parting.json`,
+`NAME.parting.serial.f32.safetensors` and the three other files of a case (486 MB and 464 MB each). The last
+row of each is the row that chose the parting token. Checks on the export: the first 23 rows' argmaxes are the
+old files'; rows 22 to 43 (22 to 41) choose TensorFold's reply token by token; the four greedy tokens after the
+row are tokens 21 to 24 (19 to 22) of `greedy_decode_path`.
+
+TensorFold's rows. It argmaxes `b.logits`, bf16 (`decode.Engine.sample`: `logits.argmax(dim=-1)`, the first
+maximum), and one id holds the maximum in both rows. `unrounded` is the head (`Exl3Linear.__call__`) once more
+on the row's `final.mixed` into an fp32 output; rounding it gives the row's bits in both.
+
+| | `sky`, row 43 (reply token 21) | `primes`, row 41 (reply token 19) |
+| --- | --- | --- |
+| TensorFold, bf16, top five | 43034 21.5; 8964 21.375; 33470 21.25; 6605 19.625; 44857 16.0 | 248046 16.25; 248045 15.5; 271 11.25; 198 10.8125; 220 9.0 |
+| TensorFold, fp32 before the store | 43034 21.53676; 8964 21.41203 | 248046 16.28798; 248045 15.48988 |
+| The two equal after its rounding | no: one bf16 step (0.125) apart | no: 0.75, six steps of 0.125 |
+| zspark, fp32, its own running state | 43034 21.55498; 8964 21.54104 (both 21.5) | 248046 15.44205; 248045 15.44696 (both 15.4375) |
+| zspark less TensorFold | +0.018; +0.129 | -0.846; -0.043 |
+
+`zspark compare` on the two new serial files (built at 4ed4251, `-Doptimize=fast`):
+
+- Each block from TensorFold's input, 44 and 42 rows: `h_mid` 2.75e-3 and 2.76e-3 at worst, `h_in` 2.71e-3 and
+  2.74e-3, `final_h` 1.89e-3 and 1.79e-3; no pick differs, `projection`, `moe_y` and `logits` are TensorFold's
+  bits (`final_mixed` too on `primes`; 116 of 112,640 values on `sky`). Row by row (a throwaway print in
+  `compare.zig`, not committed) the worst block of the parting rows is 2.63e-3 (`sky` 43) and 2.31e-3
+  (`primes` 41); the worst of any row is 5.0e-3, one value of a row's four in `mlp_inject`.
+- Running free: logits 4.27e-2 and 6.56e-2 of their rms away over the whole sequences, 1974 and 4019 picks
+  differing. Row by row (the same throwaway print): `sky` row 43 is 5.1e-2 away, 0.106 a logit in rms, 0.67 at
+  most; `primes` rows 0 to 38 are 0.5e-2 to 8.3e-2 away, and rows 39, 40 and 41, in the turns the model makes up
+  after its answer, 21.4e-2, 19.4e-2 and 14.7e-2: row 41 is 0.361 a logit in rms and 1.83 at most, and row 40
+  holds 248045 at 24.5 against TensorFold's 21.375.
+
+Verdict, in the terms asked (a: a tie in TensorFold too; b: one bf16 step on its side that the within-tolerance
+differences explain; c: something larger):
+
+- `sky`: (b). TensorFold's two logits are one bf16 step apart; zspark's 8964 is 0.129 above TensorFold's, 1.2
+  times that row's rms difference, and the two round to the same bf16.
+- `primes`: neither (a) nor (b). TensorFold's row is no close call: 0.798 apart before the rounding, six bf16
+  steps after it. zspark's 248046 is 0.846 under TensorFold's (5.2% of the value), 2.3 times that row's rms
+  difference and under half its largest. What the numbers say for it: no block of that row is further than
+  2.3e-3 from TensorFold's when fed TensorFold's input, and no pick differs in the 42 rows; the difference is
+  in the running state, which at rows 39 to 41 is three times further from TensorFold's than at the rows
+  before. What they do not say: why those three rows drift so, and nothing here shows that 15 to 21% is what
+  within-tolerance differences must add up to there. TensorFold's own engine (its prompt kernels, then the same
+  decode kernels) also takes 248045 at this token, which says the row turns on differences of the size of
+  TensorFold's own two paths', and no more than that.
+- The second part's inference ("differed by at least one bf16 step", needing 1.7e-3 of the value) was right in
+  kind and wrong in size for `primes`: the logit is 5.2% away.
+
+Goal 4 is left unticked and WS-05 In progress, as asked for a verdict that is not (a) or (b) on both prompts.
+Every exported point is within the tolerance on both longer sequences too, and the replies are the engine's
+token for token; what stands between the goal and its box is whether a 15% free-running distance at `primes`'
+made-up turns is accepted as drift. To decide it by measurement: run TensorFold's serial steps from zspark's
+streams at one layer of row 39 (or zspark from TensorFold's at each layer in turn) and see whether the row's
+logits follow the input; or hold the row by row free-running distances of TensorFold's own prompt path over
+the same 42 ids beside these.
+
+Not done, not run, or uncertain:
+
+- `zig build test` was not run (no Zig source changed but a doc comment); `zig build`, `zig build check-specs`
+  and `zig fmt --check src build.zig tools` pass. The exporter was run only as above: on the pack, without
+  `--engine`.
+- zspark's fp32 values in the table are the second part's (spark-a), not measured again.
+- The row-by-row figures come from a print added to `compare.zig` for the two runs and reverted; `compare`
+  itself reports a point over all rows.
+- `unrounded` is `None` on an NVFP4 checkpoint (its head is not an `Exl3Linear`); not tried there.
+
+### 2026-10-05, WS-05 fourth part: the write-back rounded twice; the parting rows amplify (Claude subagent, branch `spec-014-exl3-primes`)
+
+Written by the subagent at the coordinator's request. The branch starts at 20f024a. spark-a, every GPU command
+under `flock ~/.cache/zspark/gpu.lock`; TensorFold read only and not run.
+
+Changed: `kernels/flash_next/hc.cu` (the write-back), `src/flash_next/hc.zig` (its test, now bit for bit),
+`src/flash_next/compare.zig` (`ByRow`, `Own`, `Perturb` on a `Comparison`; the three `Bounds` and their
+comments), `src/main.zig` (`compare DIR REF [free] [rows[=POINT]] [perturb=SIZE[@LAYER[:ROW]]] [seeds=N]`;
+without the new words the output is what it was), `kernels/AGENTS.md`, `src/flash_next/AGENTS.md`,
+`tools/reference/AGENTS.md`.
+
+Verdict: a bug, located and fixed, and with it both greedy replies on the pack are the decode path's whole (64
+of 64 and 32 of 32). The distance that remains when zspark runs free is amplification, shown by numbers. Both
+halves matter: the fix does not make the parting rows steady, it puts zspark on TensorFold's side of them.
+
+The bug. `_hc_writeback` in TensorFold's `glue.py` reads `hv = (hv + (branch * inj).to(bf16).to(f32)).to(bf16)`
+and `hc.cu` was written from that: `bf(hv + bf(b * inj))`. The kernel Triton compiles does not round the
+product. Replayed on the host (numpy, scratch scripts, not committed) from the references' own tensors
+(`block.branch` or `moe.y`, `moe.weights`, the injects, the stream before):
+
+| reference | values of `h_mid`, and of next `h_in` with `final.h` | one rounding `bf16(h + b * inj)` | two roundings, as the source reads |
+| --- | --- | --- | --- |
+| EXL3 `primes.parting` | 20,643,840 each | 0 differ | about one in ten, 2.76e-3 and 2.74e-3 at worst |
+| EXL3 `sky.parting` | 21,626,880 | 0 | the same |
+| EXL3 `short` | 2,457,600 | 0 | the same |
+| NVFP4 `primes` | 11,304,960 | 0 | the same |
+| hybrid `primes` | 11,304,960 | 0 | the same |
+
+The counts of the second column are what `zspark compare` reported for the old kernel on `primes.parting`
+(2,116,245 values of `h_mid`, 2,306,177 of `h_in`, 86,300 of `final_h`). The slots' sum behind the MoE's
+write-back is `acc = fma(y, w, acc)` over the slots in order, then one rounding, which is what nvcc made of
+zspark's line already; written without the fma the replay misses 11 to 51 values a reference. So the 2.5e-3 to
+2.9e-3 every part of this spec recorded for `h_in` and `h_mid` "as on NVFP4" was one misplaced rounding at every
+write-back of every layer, on NVFP4 since spec 002, and not a summation order. Matching TensorFold's arithmetic
+here is right: the reference for behaviour is what TensorFold computes, and its exported tensors say which.
+
+After the fix, each block from TensorFold's input (`zspark compare`, `-Doptimize=fast`):
+
+| reference | `h_in`, `h_mid`, `final_h` | what is still only near (values differing; worst relative rms) |
+| --- | --- | --- |
+| EXL3 `primes.parting`, 42 rows | 0 of 20,643,840; 0; 0 of 430,080 | `attn_mixed` 3507 (4.6e-4), `block_out` 1284 (2.4e-4), `branch` 39,496 (1.27e-3), `mlp_mixed` 2284 (2.6e-4), `moe_weights` 3, `h_after_ple` 2, `mlp_inject` 1 |
+| EXL3 `sky.parting`, 44 rows | 0 of 21,626,880; 0; 0 | `attn_mixed` 3217, `block_out` 1149, `branch` 31,317 (1.09e-3), `mlp_mixed` 3663, `moe_weights` 5, `final_mixed` 116, `mlp_inject` 1 |
+| NVFP4 `primes`, 23 rows | 0 of 11,304,960; 0; 0 | `attn_mixed` 1516, `block_out` 159, `branch` 12,966 (6.1e-4), `mlp_mixed` 404, 2 picks at a 2.4e-7 gap |
+
+The test. `hc.zig`'s host check of the write-back compared with a tolerance of |x|/64 and so passed either way.
+It is now "a write-back is bf16(h + branch * inject), the product unrounded: TensorFold's compiled kernel, bit
+for bit": exact bits against the host for both forms of the call, and a count showing that the two-rounding
+form would differ on its inputs. Mutation: with `bf(hv + bf(b * inj))` restored in `hc.cu` it fails ("expected
+15404, found 15360"); restored, it passes.
+
+The greedy comparison again (the gated runs below):
+
+| checkpoint | greedy `sky`, of the decode path's 64 | greedy `primes`, of 32 | sampled `primes`, `sky`, of the engine's 64 |
+| --- | --- | --- | --- |
+| EXL3, before | 21 | 19 | 36, 30 |
+| EXL3, after | 64 | 32 | 64, 30 |
+| NVFP4 published, before | 64 | 18 | 28, 64 |
+| NVFP4 published, after | 64 | 18 (846 at 18.28 for TensorFold's 248045 at 16.52 in zspark's row) | 64, 64 |
+| hybrid, before | 64 (31 when first measured) | 32 | 28, 64 |
+| hybrid, after | 31 (369 at 20.23 for 11 at 20.10) | 18 (248045 at 18.81 for 846 at 16.28) | 18 (the same token), 64 |
+
+Bounds: `packed_pack.greedy` is raised from 21 and 19 to 64 and 32; `h_in`, `h_mid` and `final_h` join the exact
+points of all three checkpoints; `relative` goes from 6e-3 to 2e-3 on all three (1.2e-3 is the worst measured).
+**Two bounds are lower: the hybrid's greedy `primes` from 32 to 18 and its sampled `primes` from 28 to 18.**
+Both are the same row (40, reply token 18), and this is the part of this entry the coordinator should weigh:
+the fix makes every stream TensorFold's bits on the hybrid too, and its reply there now parts earlier. The
+numbers that say it is the row and not the fix are below (the row changes its token under noise of 1.5e-4 in
+5 seeds of 8, and TensorFold's own two paths take one token each there). No tolerance on a tensor is looser.
+
+The picture by row and layer (`compare ... free rows`, `primes.parting`, relative rms of `h_in` in 1e-3):
+
+- Before the fix every row is 4 to 7 by layer 4 (the write-backs), then grows slowly and jumps where a pick
+  flips: row 3 from 7.6 at layer 16 to 37 at layer 20, row 10 at 25 by layer 4. Logits by row: 4.9, 5.0, 7.5 for
+  rows 0 to 2; 8 to 83 for rows 3 to 38; 214, 194, 147 for rows 39, 40, 41; 4019 picks differ. Row 41 takes
+  248045 (TensorFold 248046), and prompt row 6 takes 248046 for 44954.
+- After it rows start at 2 to 4 by layer 4 and the shape is the same: logits 4.4, 5.2, 6.9, then 7 to 106, then
+  186, 222, 187 at rows 39 to 41; 4288 picks differ; row 41 takes 248046, row 6 still differs.
+- `sky.parting`: logits 3.1e-2 of their rms away over the sequence after the fix (4.3e-2 before), row 43 at 17
+  (51 before) and taking 43034, TensorFold's (8964 before); the largest row is 20, at 171 (295 before).
+- So the distance does not grow at one layer or from one block. It is seeded at every layer by the few thousand
+  values the read-outs, `block_out` and `branch` still differ by, multiplied where a row's expert picks change
+  (about a fifth of all slots end up different), and carried to later rows by the attention caches and
+  DeltaNet's state; rows 39 to 41, the turns the model makes up after its answer, are where it is largest.
+
+Carried state. The references hold none of it: 654 tensors a case, the points of each layer and nothing of
+DeltaNet's recurrent or conv state, the attention's key, value or indexer caches, or the PLE's tail. In the
+forced comparison those states are zspark's own, each built from the reference's inputs of the rows before, and
+they are checked through what they feed: `block_out` (1284 values of 12.4 million differ, 2.4e-4 at worst, an
+attention layer) and `h_after_ple` (2 values). Nothing measured points at a state. To check one directly
+another worker would export, after each row's commit, `st.rec[cur, li]` and `st.conv[li]` of every DeltaNet
+layer, the key and value caches with the indexer's (`kc`, `ikc`, `pooled`) of every attention layer, and
+`ple_tail`; `tools/reference/AGENTS.md` now says so. Not asked for by any number here.
+
+Amplification, zspark against itself (`compare ... free perturb=SIZE seeds=N`: gaussian noise of SIZE of each
+row's rms added to layer 0's `h_in`, rounded to bf16; each row's logits against the run without it, 1e-3 of the
+row's rms). 2.8e-3 lands as 2.9e-3 after the rounding, 3e-4 as 1.5e-4.
+
+| checkpoint, ids | noise | rows 0 to 2 | rows 39, 40, 41, by seed | row 41's token |
+| --- | --- | --- | --- | --- |
+| EXL3 before the fix, `primes.parting` | 2.9e-3, every row | 4 to 20 | 220/283/201, 159/251/145, 148/203/146, 199/262/183 | 248046 in 1 of 4 (248045 without noise) |
+| EXL3 after, the same | 2.9e-3, every row | 4 to 20 | 249/281/174, 251/345/276, 166/250/241, 210/304/255, 163/191/187, 179/251/201 | 248045 in 5 of 6 (248046 without) |
+| EXL3 after | 2.9e-3, row 0 alone | 4 to 9 | 212/251/268, 183/256/235, 190/199/232, 237/278/254, 238/314/252, 220/310/189 | 248045 in 4 of 6 |
+| EXL3 after | 1.5e-4, every row | 4 to 11 | 227/234/259, 253/248/242, 227/266/220, 230/225/252, 264/254/133, 253/296/235 | 248045 in 6 of 8 (8 seeds run for the tokens) |
+| NVFP4 after, the pack's 42 ids | 2.9e-3, every row | 5 to 20 | 176/220/186, 190/223/205, 188/255/180, 153/196/115, 182/350/152, 230/294/169 | 248045 in 6 of 6 |
+
+Rows whose first token changes under 1.5e-4, 8 seeds, the pack's 42 ids (rows 0 to 40 are every checkpoint's
+own prompt and first 18 reply tokens): EXL3 row 41 in 6, row 6 in 2, row 5 in 1; NVFP4 published row 40 (846
+into 248045) in 3; hybrid row 40 (248045 into 846) in 5, row 6 in 5, row 41 in 1. `sky.parting` under 2.9e-3:
+row 43 turns from 43034 into 8964 in 4 seeds of 4, the row's logits moving by 17 to 22.
+
+What that says. The size of the perturbation does not matter between 1.5e-4 and 2.9e-3, nor whether one row or
+all carry it: a row's first 48 layers turn it into about 5e-3 of the logits at row 0 and 13% to 35% at rows 39
+to 41. The 15% to 21% of the third part is therefore what any difference becomes at those rows, on NVFP4 as on
+the pack, and no measure of how wrong a block is. A row's noise reaching every later row through one row's
+input is the context (the caches and DeltaNet's state), which is the model's and no bug.
+
+(b) NVFP4 against `~/.cache/zspark/reference` `primes`: that reference stops at the prompt's 23 rows, so its
+post-answer rows cannot be compared with TensorFold's; what can: running free, logits of rows 18 to 22 are 138,
+66, 113, 62, 92 after the fix (75, 39, 71, 28, 67 before), the same size as the pack's rows 18 to 22 (68, 31,
+70, 106, 67). With the fix rows 0 to 3 stay TensorFold's bits through layer 6 and row 0 through layer 12. The
+post-answer rows on NVFP4 are in the table above, against itself.
+
+(c) TensorFold's own two paths. `prefill_vs_serial` in `NAME.json` holds one figure a point over the prompt's
+rows and the last row's logits, not rows: logits 9.4% (`primes`, 23 rows), 3.3% (`sky`), 29% (`short`, 5 rows);
+`final.h` 4.1%, 2.9%, 29%; 509 of 1104 rows of a layer with a pick that differs on `primes`. By row it exists only as
+statistics in `score.json` (`prompt_vs_decode`, 5337 rows, each path on its own state): logits 9.6% of a row's
+rms on average, median 8.9%, 90th percentile 13.8%, 99th 22.9%, largest 69%; 5002 rows keep their first token.
+So TensorFold's prompt kernels against its decode kernels sit where zspark sits against its decode kernels, and
+rows as far as `primes`' 39 to 41 are its 99th percentile. The 42 ids were not run on TensorFold's prompt path
+(it would need TensorFold run on spark-b).
+
+Verification:
+
+- `zig build test --summary all` with `ZSPARK_FLASH_NEXT_EXL3_3_05BPW` and `ZSPARK_REFERENCE_EXL3_3_05BPW`: 196 pass, 16 skip
+  of 212 (main: 195 and 16 of 211; the one more is the write-back's test).
+- The same with `ZSPARK_FLASH_NEXT`, `ZSPARK_REFERENCE`, `ZSPARK_FLASH_NEXT_HYBRID` and
+  `ZSPARK_REFERENCE_HYBRID`, a separate invocation: 206 pass, 6 skip of 212, with the two hybrid bounds above.
+- `zig fmt src build.zig tools`, `zig build check-specs`.
+
+This changes NVFP4 and hybrid bits: every stream after every write-back. Their reference tests were re-run as
+above. `zspark score` was not re-run on any checkpoint; the numbers in `README.md` and in this spec's second
+part (2.1425 and the pack's) are from before the fix and may move by the 0.005 two rounding orders part by.
+Speed is not affected (one rounding less a value).
+
+Goal 4 is ticked and WS-05 set Done on this: a located bug, fixed, with both greedy replies then the decode
+path's. The caveat, plainly: the agreement at `primes`' token 19 and `sky`'s token 21 is not a margin. Those
+rows change their token under noise of 1.5e-4 of a row's rms, so a later
+change of any summation order on either side may part the replies again without being a bug, as the hybrid's
+`primes` did here; the forced comparison (streams, linears, picks and logits exact, the rest under 1.3e-3) is
+the criterion that holds.
+
+Not done, not run, or uncertain:
+
+- Why Triton's kernel rounds once is inferred, not shown: LLVM narrowing the fp32 product and sum of bf16
+  values and NVPTX contracting them into one bf16 fma would do it, and it fits the read-out (`_hc_mix`, whose
+  rounding is kept, matches zspark's) and the PLE (no product). The compiled kernel was not disassembled;
+  TensorFold was not run. The evidence is the replay: 0 of 67 million values of each tensor across five references.
+- Whether the single rounding is of the exact `h + b * inj` or of its fp32 sum cannot be told from the
+  references: the two agree on all 20.6 million values of `primes.parting`. `hc.cu` rounds the fp32 fma.
+- The read-outs, `block_out` and `branch` still differ from TensorFold's at a few thousand values a point.
+  They were not replayed on the host as the write-back was; one of them may be a second misplaced rounding
+  and not a summation order. That is the next thing to do if the streams running free are to be closer.
+- The hybrid was compared through its gated test alone, not by `zspark compare` with `rows`.
+- `README.md` was not changed: it cites none of the numbers that moved.
+- `zspark score`, `bench` and the serving paths were not run after the fix.
+
+### 2026-10-05, the scores after the write-back fix, and closing (coordinator)
+
+- Merged `spec-014-exl3-primes` after both gated runs passed on the rebased tree: NVFP4 and hybrid variables 206
+  pass, 6 skip of 212; the pack's variables 196 pass, 16 skip.
+- The fix changes every stream's bits on every checkpoint, so `zspark score` was run again on main (e7193be,
+  `-Doptimize=fast`, bf16 caches, the 5336 tokens): NVFP4 2.14998 nll, ranked first 0.5542 (2.14248 and 0.5527
+  before the fix); the pack 2.16061 and 0.5519 (2.15689 and 0.5497 before; TensorFold's decode path 2.15610 and
+  0.5517). One rounding moved the NVFP4 score by 0.0075, so differences under 0.01 on this text say nothing: spec
+  015's table, measured before the fix against 2.14248, is to be read with that.
+- Not re-measured after the fix: the fp8 and fp8-nvfp4 scores, the speeds.
+
+## Completion summary
+
+Completed 2026-10-05. `zspark chat`, `serve`, `generate`, `score` and `compare` take the EXL3 pack
+(`turboderp/Qwen3.8-Flash-Next-exl3`, `3.05bpw_h5_ng5`): the format and a host decoder (`src/exl3.zig`),
+TensorFold's dense and expert kernels on the C ABI (`kernels/exl3/`), fp16 linears on the CUTLASS GEMM, the
+n-gram rows decoded on the device from the mapped table, a draft head requantized to NVFP4, and prompts on the
+decode kernels. Against TensorFold's decode path every exported point is within 2e-3 with the streams, picks,
+expert slots and logits bit for bit, and the greedy replies of both reference prompts are its tokens. On spark-a
+the pack loads in 10.5 s, holds 58.3 GiB on the device and 3.3 GB on the host, and decodes 33.6 tok/s serial and
+60 to 63 drafted in a first reply (68 to 70 once graphs exist; TensorFold 70 to 71); a cold prompt of 3930 tokens
+runs at 565 tok/s, half the NVFP4 checkpoint's; the score is 2.1606 nll beside NVFP4's 2.1500.
+
+The comparison found a misplaced rounding in the hyper-connection write-back, present since spec 002 on every
+checkpoint: fixed, and the streams now equal TensorFold's bit for bit. The greedy agreement is not a margin: the
+rows where the replies had parted flip under noise of 1.5e-4, so the block-by-block comparison is the criterion.
+
+Left open: graphs captured at load instead of during the first reply (the whole first-reply gap to TensorFold);
+the greedy token chosen on the device; fp8-nvfp4 caches on the pack scoring 0.009 above bf16, not investigated;
+the read-outs, `block_out` and `branch` not replayed on the host as the write-back was; carried state never
+compared directly (the references hold none); a mutation of the n-gram rows kernel's last rounding that no test
+catches; GLM-5.3-Flash on EXL3, the roadmap's next item.
+---
+id: "017"
+title: "Structured output: grammar-masked sampling and required tool calls"
+status: Completed
+created: 2026-10-05
+updated: 2026-10-05
+coordinator: "Claude (Opus 5.5), with shuuul deciding scope"
+---
+
+# 017 — Structured output: grammar-masked sampling and required tool calls
+
+## Context
+
+zspark refuses `response_format`, the `guided_*` fields and `tool_choice: "required"` with a 400
+(`src/server/openai.zig`). TensorFold constrains with xgrammar (`engine/grammar.py`: json_object, json_schema,
+regex, choice, EBNF): before a window it walks the draft chain through the matcher, cuts the drafts the grammar
+rejects and fills a bitmask a kept row; after the forward the disallowed logits are set to -inf and the row is
+sampled; the grammar starts after `</think>`. `tool_choice: "required"` is not a grammar there but `CallGate`
+(`engine/call_gate.py`): the reply is cut at the first token that is not a call, `<tool_call>` is spliced in and
+decoding resumes. xgrammar is C++ under Python; zspark has no Python at runtime.
+
+## Goal and success criteria
+
+- [x] `response_format` `json_object` and `json_schema` (and what specs 016's APIs map onto them) give replies
+      that parse and validate, streamed or whole.
+- [x] `tool_choice: "required"` and a named function give a tool call.
+- [x] With a constraint a drafted reply still equals the serial one, greedy and sampled.
+- [x] The cost of a mask a token is measured and recorded.
+
+## Scope and non-goals
+
+In scope:
+
+- The engine, the mask at `draft.Decoder.round` and at the prompt's end, draft pruning, the call gate, the
+  request fields, tests.
+
+Not in scope:
+
+- Regex and EBNF from the request unless the chosen engine gives them for free. Constraints in shared rounds
+  (spec 018 takes that up).
+
+## Decisions
+
+| Date | Decision | Rationale | Affected workstreams |
+| --- | --- | --- | --- |
+| 2026-10-05 | Open: link xgrammar's C++ core, or write a JSON-schema engine in Zig | The first is complete and a new C++ dependency with its tokenizer preprocessing; the second is narrower and ours. WS-01 measures both enough to decide | WS-01 |
+| 2026-10-05 | The Zig matcher (`src/text/json_schema.zig`) behind an engine-neutral interface; xgrammar stays the measured fallback | The owner's decision on WS-01's comparison: the same masks bit for bit in this spec's scope, faster once warm, 14 MB less a grammar, no C++ dependency, and positions that a draft tree walks without rollback. WS-02 first adds `$ref` and `anyOf`/`oneOf` told apart by the first byte, which client schemas carry. `pattern`, regex or EBNF would be the reason to link xgrammar later | WS-02, WS-03 |
+| 2026-10-05 | The mask is applied on the host, to the downloaded row the sampler is about to read | The sampler is on the host and reads one row at a time; a device mask would be an upload a row and a kernel in the step's graph for bits that are downloaded anyway. Measured: 160 to 180 us a row on a first reply | WS-02 |
+| 2026-10-05 | Where the matcher parts from xgrammar on purpose: special tokens never; well-formed UTF-8 only; an escaped surrogate needs its partner; `minItems`/`maxItems` with neither `type` nor `items` is an array within its bounds | The reply has to decode and to parse in a strict parser; a keyword is never dropped. Each is named and counted in the differential test | WS-02, WS-03 |
+| 2026-10-05 | Where it follows xgrammar though JSON Schema says otherwise: keys in the schema's order, no undeclared key, `"properties": {}` takes `{}` alone | One policy with TensorFold's engine; every document taken is still valid under the schema | WS-02, WS-03 |
+| 2026-10-05 | The xgrammar fixtures live in `src/text/testdata/`, not `src/testdata/` | `json_schema.zig` embeds them and is tested alone (`zig test src/text/json_schema.zig`), whose module root is `src/text/` | WS-02 |
+| 2026-10-05 | A required call is a grammar of its own (`src/text/call_gate.zig`), in the JSON payload form, with the arguments under the tool's `parameters`; not TensorFold's `CallGate` | TensorFold lets the reply run, cuts it at the first token that is not a call and splices `<tool_call>\n<function=` in, and constrains no argument. A mask a row is what the decoder already has, keeps drafted equal to serial with nothing rolled back, and holds the arguments to the schema. The template's XML form (`<parameter=K>` with raw values) has no grammar for a value's type; the JSON payload is one `reply.parse` already reads. Its cost: the head drafts the XML form, so most drafts are cut under a gate | WS-03 |
+| 2026-10-05 | A request's constraint is compiled by the backend inside `generate` (`server/structured.zig`), not by the parsers | `generate` runs under `Server.decoding`, so compilation and mask filling never run beside another reply's and the engine needs no lock; `count_tokens`, which does not take that lock, never reaches the engine. A refusal is still a plain 400: nothing of a stream is sent before the backend's first piece | WS-03 |
+| 2026-10-05 | `strict` is never read; a keyword the matcher does not read is a 400 in every case | TensorFold's parser does not read `strict` either and always enforces. Where its engine would drop a keyword zspark refuses, since a reply that ignores `pattern` under `strict: false` is still a reply the client did not ask for | WS-03 |
+| 2026-10-05 | Under a required or named call, tool `parameters` are compiled as an object's schema: absent or null takes `{}` alone, a schema with no `type` gets `"type": "object"`, anything that is not an object's, or carries an unread keyword, is a 400 naming the tool. With `auto` they are not compiled | Arguments are an object in every API; clients send `parameters` without `type` and with none at all. `auto` constrains nothing, so refusing there would break requests that work today | WS-03 |
+| 2026-10-05 | A document format beside a required or named call is a 400; beside tools under `auto` the document is enforced and no tool can be called | The two constraints exclude each other, and choosing one silently is what the refusal rule forbids. The `auto` case is TensorFold's behaviour and is documented as a limit | WS-03 |
+
+## Workstreams
+
+Use `Pending`, `Claimed`, `In progress`, `Blocked`, or `Done`.
+
+| ID | Deliverable | Owner | Status | Dependencies | Verification |
+| --- | --- | --- | --- | --- | --- |
+| WS-01 | The engine decided: xgrammar's core built and called from Zig on this tokenizer, against a Zig JSON-schema matcher's prototype; mask time a token | Claude subagent | Done | None | A recorded comparison and decision |
+| WS-02 | Masks in the decoder: prompt end, each row of a window, draft pruning, after `</think>` | Claude subagent | Done | WS-01 | Random model: drafted equals serial under a constraint |
+| WS-03 | The call gate; request fields in `openai.zig`; the refusals removed | Claude subagent | Done | WS-02 | `zig test src/server_tests.zig`; schema-valid replies on the checkpoint |
+
+## Verification
+
+- `zig build test --summary all`; `zig test src/server_tests.zig`; `zig build check-specs`.
+
+## Documentation sync
+
+- Durable product/developer docs: `README.md`.
+- Nearest local `AGENTS.md`: `src/server/AGENTS.md`, `src/flash_next/AGENTS.md` (masks and the rule).
+- Root guidance and roadmap: `AGENTS.md` (scope).
+- `src/text/AGENTS.md`: `json_schema.zig`, its purpose and its commands (WS-01); `grammar.zig`, what holds the
+  matcher (the oracle, the properties, the refusals, mutations), the meant differences and the limits (WS-02).
+- `src/flash_next/AGENTS.md`: `masks.zig`, the rule under a constraint, the entry point (WS-02).
+- `tools/reference/AGENTS.md`: the `grammar_masks` fixture and how it is regenerated (WS-02).
+- `README.md`: `zspark chat --schema FILE` and `--json` (WS-02).
+- WS-03: `README.md` (the fields served in each API, what is refused and why, the speeds); `src/server/AGENTS.md`
+  (`structured.zig`, the rules: who compiles and under which lock, `strict`, nothing compiled without a
+  structure, the exchanges' packages); `src/text/AGENTS.md` (`call_gate.zig`); `src/flash_next/AGENTS.md`
+  (`Chat.compiler`); `tools/reference/AGENTS.md` (what the exchanges ask for now); root `AGENTS.md` (scope).
+
+## Progress and handoff
+
+Append entries rather than rewriting another worker's record.
+
+### 2026-10-05 — WS-01: both engines measured, a recommendation (Claude subagent, branch `spec-017-engine`)
+
+Host only, on dspark's CPU (aarch64, 20 cores); no model was loaded. The decision is the owner's and the
+Decisions row stays open: this entry is the comparison and a recommendation.
+
+**Changed.** `src/text/json_schema.zig` (1130 lines and 289 of tests): the Zig matcher's prototype, registered
+in `src/main.zig`'s tests and described in `src/text/AGENTS.md`; nothing in the decoder or the server calls it.
+The xgrammar build, the C shim and the benchmark stayed in scratch and are not in the repository.
+
+**xgrammar: what it takes.**
+
+- Source: `mlc-ai/xgrammar` at `8262b5c` (main; the version is set by setuptools-scm, TensorFold pins
+  `>=0.2.8,<0.3`). Apache-2.0, with a NOTICE ("XGrammar, Copyright (c) 2024 by XGrammar Contributors").
+- C++17, 29 translation units, 41,183 lines with its headers. Bundled and header-only: picojson, dlpack (a
+  submodule). Optional and off: cpptrace; googletest for its own tests. It needs pthread (a thread pool in the
+  compiler) and libstdc++. No Python is needed once `XGRAMMAR_BUILD_PYTHON_BINDINGS` is off; its
+  `cmake/config.cmake` sets it on, so a `config.cmake` in the build directory has to say otherwise.
+- Build: CMake and g++ 13.3 (`-O3 -flto=auto`), 3.8 s wall and 35 s of CPU, 542 MB peak; `libxgrammar.a` is
+  27.3 MB of LTO objects. Without CMake and LTO, as `build.zig` would do it beside nvcc: `g++ -std=c++17 -O3 -c`
+  on the 29 files, 9.3 s wall on 20 jobs, 6.2 MB of objects, linked by `zig build-exe` with the system's
+  libstdc++; the benchmark so linked gives the same masks and times. On the command line `-lstdc++` is Zig's
+  own libc++ and does not link (the objects want libstdc++'s `std::__cxx11`); `libstdc++.so.6` by its path does.
+  `zig-out/bin/zspark` already depends on `libstdc++.so.6`.
+- Size: the shim with xgrammar as a shared library, 2.54 MB (1.98 MB stripped).
+- Surface: there is no C API. The classes are `TokenizerInfo`, `GrammarCompiler`, `CompiledGrammar` and
+  `GrammarMatcher`, with a `DLTensor` of int32 words as the mask, and they throw. The shim was 41 lines of
+  header and 128 of C++: `zxg_tokenizer_new` (the tokens' bytes, `VocabType::RAW`, the stop ids),
+  `zxg_compiler_new`, `zxg_compile_json_schema`, `zxg_compile_ebnf`, `zxg_matcher_new`, `zxg_fill`,
+  `zxg_accept`, `zxg_rollback`, `zxg_terminated`, `zxg_reset`, the `_free`s; every exception caught and
+  returned as text. Zig 0.17 has no `@cImport`, so the declarations are written by hand.
+- It reads what the Zig matcher does not: `$ref`, `anyOf`, `oneOf`, `allOf`, `pattern`, `format`, string and
+  number bounds, `prefixItems`, `patternProperties`, `propertyNames`; and regex, EBNF and structural tags, so
+  `guided_regex`, `guided_choice` and `guided_grammar` come with it. It also has `TraverseDraftTree` and a
+  batch matcher, which TensorFold does not use.
+
+**The Zig matcher: what it covers.** `type` (a name or a list), `properties` with `required` (in the schema's
+order, closed), `items`, `enum`, `const`, `minItems`, `maxItems`, `additionalProperties` beside no
+`properties`, an object or a value of any shape, nesting, xgrammar's whitespace rule (up to 32). Anything else
+is refused at compile with the keyword's name. What covering the rest would cost, estimated, not built:
+
+| Not covered | Cost |
+| --- | --- |
+| `$ref`, `$defs`, recursion | 60 to 80 lines: nodes are already ids and the frame stack recurses |
+| `anyOf`, `oneOf` told apart by the first byte | about 20 lines over the `choice` node that type lists use |
+| `anyOf`, `oneOf` in general | 300 to 500 lines: a position becomes a set of stacks, and the cache is redone |
+| `pattern`, `format`, `minLength`, `maxLength` | 600 to 1000 lines: a regex to a byte DFA |
+| `minimum`, `maximum` on integers | about 150 lines; on numbers, more |
+| `additionalProperties` beside `properties`, `patternProperties` | about 100 lines (and the regex for the second) |
+| `allOf` | about 100 lines to merge schemas; not general |
+| regex, choice and EBNF from the request | the regex engine above for the first two; EBNF is xgrammar rewritten |
+
+Its other limits: `accept` may allocate (frames are only added, about two a byte, and not compacted until the
+matcher is reset); the first mask at a new kind of place allocates and walks the vocabulary; grammars that share
+a `Vocabulary` must not fill at once.
+
+**Times.** The checkpoint's `tokenizer.json`: 248,077 ids, masks 248,320 bits wide, stops 248046 and 248044.
+ReleaseFast for Zig, `-O3` LTO for xgrammar, one thread, each document of each schema fed token by token as
+zspark's tokenizer splits it. Once a process: zspark reads `tokenizer.json` in about 130 ms (it does today);
+xgrammar's `TokenizerInfo` 51 ms; the Zig `Vocabulary` 41 ms.
+
+| Schema | Steps | xg compile | xg mask mean | xg worst | Zig compile | Zig first pass mean | first worst | Zig warm mean | warm worst | Differing |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| flat: five scalars, four required | 114 | 19 to 33 ms | 13.1 us | 70.7 us | 0.02 ms | 95.5 us | 6494 us | 1.2 us | 7.5 us | 0 |
+| nested: objects, arrays of objects, enums | 225 | 5.9 ms | 13.6 us | 67.6 us | 0.03 ms | 22.8 us | 97 us | 1.1 us | 5.2 us | 0 |
+| tool: `get_weather` of `reply_cases.json` | 40 | 4.7 ms | 12.1 us | 79.4 us | 0.01 ms | 17.9 us | 127 us | 1.0 us | 3.9 us | 0 |
+| typed: every type, an untyped value | 109 | 5.0 ms | 21.9 us | 85.5 us | 0.02 ms | 35.0 us | 452 us | 1.2 us | 6.8 us | 0 |
+| object: `{"type": "object"}` (json_object) | 49 | 5.3 ms | 35.0 us | 130.7 us | 0.01 ms | 5.4 us | 119 us | 2.1 us | 4.0 us | 0 |
+| bounded: `minItems`, a union, any keys | 62 | 7.0 ms | 15.3 us | 52.8 us | 0.02 ms | 31.3 us | 466 us | 1.0 us | 5.6 us | 0 |
+| all | 599 | | 16.8 us | 130.7 us | | 38.0 us | 6494 us | 1.2 us | 7.5 us | 0 |
+
+- "First pass" is a grammar's first documents, when the Zig matcher fills its cache; "warm" is the same
+  documents again. The 6.5 ms is the walk of the vocabulary for a string's inside, once a `Vocabulary`, not
+  once a schema or a request; after it the worst first visit of a place was 0.47 ms. xgrammar does its like
+  work in the compile, which is why its masks have no such step; its first compile carries a one-time cost
+  (19 to 33 ms against about 5).
+- Memory: xgrammar's `MemorySizeBytes` is 13.9 MB a compiled grammar; the Zig matcher keeps 0 to 138 kB a
+  grammar and 299 kB that every grammar shares.
+- `accept`: xgrammar 0.6 to 1.1 us mean, 6.6 worst; Zig about 0.1 us, 0.8 worst. Zig with no cache at all
+  (every token walked each time): 2.5 to 6 ms a mask, so the cache is the design, not an optimization.
+- Either way a mask is far under a decode step. It was not measured inside the decoder (WS-02's criterion).
+
+**Agreement.** Both were driven with the same tokens, and the masks compared whole at every step.
+
+- The documents: 599 steps, every mask the same bit for bit, with xgrammar given the 21 special tokens as
+  empty strings (its way to say "special").
+- Given the special tokens' text instead, as TensorFold's `TokenizerInfo.from_huggingface` does, xgrammar
+  allows 19 of them (`<|im_start|>`, `<|vision_pad|>`, ...) inside a string: on `flat`, 19 steps and 361 bits.
+  The Zig matcher never allows a special token. A zspark binding should pass them empty.
+- Random walks, a token drawn from the Zig mask each step (300 a schema, to 160 steps): 169,958 steps, 405
+  with differing masks, every one right after a byte 0xED. xgrammar takes ED A0..BF (surrogates, encoded);
+  the Zig matcher takes well-formed UTF-8 only, on purpose: the reply has to decode. With that one range
+  relaxed for the test, 147,590 steps had no difference.
+- The policy the masks share (it is xgrammar's): no whitespace around the document, properties in the schema's
+  order, no key that is not declared, `-0` not an integer, enum values written compactly.
+
+**Recommendation** (for shuuul to decide). Start WS-02 on the Zig matcher, behind an interface that names no
+engine (compile a schema, fill a mask at a position, accept, step back), and keep xgrammar as the measured
+fallback rather than link it now.
+
+- For what the spec scopes (json_object, json_schema, tool arguments) the Zig matcher gives xgrammar's masks,
+  bit for bit on what was tried, and is the faster once warm; neither is slow enough for speed to decide.
+- It adds no dependency: xgrammar is 41 thousand lines of C++ that would be compiled by g++ in `build.zig`,
+  bound through a shim that has to catch every exception, with a thread pool and 14 MB a grammar. It builds in
+  seconds and is Apache-2.0, so this is a cost, not an obstacle.
+- A position in the Zig matcher is an index into frames that never change: a draft tree is walked without
+  rollback, and a mask depends on the tokens before it alone, which is the shape the rule and WS-02's "drafted
+  equals serial" want. xgrammar gives the same by `rollback`, as TensorFold uses it.
+- The price is coverage. Schemas from real clients carry `$ref` and `anyOf` (Pydantic writes both), and the
+  matcher refuses them today. `$ref` and the first-byte `anyOf` are cheap and should be the first thing WS-02 or
+  WS-03 adds; `pattern` and `format` need a regex engine and are where the Zig path stops being small.
+- So: if the owner wants `guided_regex`, `guided_grammar`, `pattern` or the whole of JSON Schema in this spec,
+  link xgrammar instead; nothing measured here stands against it, and the shim is 170 lines.
+
+**Not done, not measured.** No model and no GPU: no reply was generated under a mask, and the mask's cost in a
+decode round is WS-02's to measure. xgrammar's regex, EBNF and structural-tag paths were compiled into the
+library but not run; nor `TraverseDraftTree`. xgrammar was not compared with the Python wheel TensorFold runs
+(the same C++, another build). The static build's size inside `zspark` itself was not measured, only the
+benchmark's (2.8 MB stripped, with both engines). The cost table above is an estimate. Walks were drawn from
+the Zig mask, so a token only xgrammar allows was compared but never followed.
+
+**Evidence.** `zig test src/text/json_schema.zig` (4 tests; with `ZSPARK_FLASH_NEXT` the checkpoint's
+vocabulary too: each mask equals the mask made token by token without the cache); `zig build check-specs`.
+
+**Next.** The owner decides the Decisions row. Then WS-02.
+
+### 2026-10-05 — WS-02: masks in the decoder, and the matcher held to an oracle (Claude subagent, branch `spec-017-masks`)
+
+Written by the subagent at the coordinator's instruction. On spark-a; commits a506639, 157b9a4, a4ad46c, 5398154,
+1b7068a and this entry's, from main at 4beef04. Not pushed, not merged.
+
+**Changed.**
+
+- `src/text/json_schema.zig`: `$ref` with `$defs`/`definitions` (any pointer into the schema, recursion
+  included) and `anyOf`/`oneOf` whose alternatives begin with different bytes; everything else refused by the
+  keyword's name. `Engine` implements the interface below. `Validator` is a second reading of a schema for the
+  tests. Then the hardening the owner asked for (below).
+- `src/text/grammar.zig`: the interface, naming no engine. `Engine.compile(Spec)` gives a `Constraint` with
+  `start`, `fill(position, mask)`, `accept(position, token)` (the position after), `ended`. Positions are
+  values.
+- `src/flash_next/masks.zig`, `draft.zig`, `session.zig`: `Decoder.masks`. `Masks.window` walks the drafts
+  through the grammar and cuts the window before the first draft that may not come at its row or that ends the
+  reply (TensorFold's `Constraint.window`: a forbidden draft is never run; the drafter is not told). `apply`
+  fills row i's mask at the position after the tokens before row i and writes bf16 -inf into the downloaded
+  row; `commit` moves to the position after the rows kept. The prompt's last row is row 0 of the first round
+  and is masked the same way. With thinking on nothing is masked or cut until the token after `</think>`.
+- `src/main.zig`: `zspark chat --schema FILE`, `--json`.
+- `tools/reference/grammar_masks.{zig,cc,sh}`, `src/text/testdata/grammar_masks.txt` (155 KB) and
+  `grammar_masks_checkpoint.txt` (94 KB).
+
+**Where the mask is applied, and why.** On the host, in the row the sampler is about to read: the sampler is
+on the host and downloads one row at a time, so a device mask would add an upload a row and a kernel to the
+step's graph for bits the host reads back anyway. Nothing on the device changed, so no graph changed.
+
+**The rule.** A row's mask is a function of the tokens before that row. A serial step is a window of one row
+at the same position, so the bits are the same. Tests on the random model (`zig build test
+-Dtest-filter=constraint`): `draft.zig` "under a constraint drafted decoding still gives the serial reply,
+greedy and sampled, and the reply is the schema's" (several specs and samplings, drafts that are never, always and sometimes wrong, graphed and eager, and
+schemas behind a gate),
+against `serialConstrained`, a reference that walks the grammar again from its start at every step;
+`session.zig` "a session's reply under a constraint is the serial one, the head drafting, and is the schema's
+document" (schemas, samplings, draft depths, thinking) and "without a constraint a reply asks the
+matcher nothing and is the reply it was" (the matcher's call counter stays 0; tokens, drafts and statistics
+equal a session that never saw an engine).
+
+**Decoder mutations, each seen to fail.** The previous row's mask (`apply` reads `rows[row - 1]`): the
+`draft.zig` test. No mask in a verify window (only when nothing is drafted): the `draft.zig` and the
+`session.zig` tests. The position not advanced after an accepted draft (`commit` from `rows[0]`): the
+`draft.zig` test. The thinking gate ignored: both. A forbidden draft not cut: the `session.zig` test.
+
+**The owner's five conditions.**
+
+1. *xgrammar as the oracle, kept as a fixture.* The generator builds against an xgrammar checkout (8262b5c;
+   nothing of it is in the repository) and writes xgrammar's mask before every token over 34 schemas: `$ref`
+   three ways with recursion, `anyOf`, `oneOf`, a Pydantic model, four tools from the server tests' shapes, a
+   strict-mode schema, deep nesting, empty objects and arrays, enums that go on from one another, escapes and
+   characters past ASCII in values and names, `const`, numbers (negative, exponent, `-0`, a leading zero
+   refused by the mask after `0`), whitespace to the 32-blank limit, five array bounds, maps, typeless schemas.
+   Documents are cut three ways (the tokenizer's, the shortest token, a random token) and there are random
+   walks. Tiny tokenizer, masks whole: 636 walks, 19726 masks, 19531 xgrammar's bit for bit; in the others
+   2154 tokens xgrammar alone takes, each making a surrogate by a scan of the text that does not use the
+   machine, and 1619 under the one schema read more narrowly; no token taken that xgrammar refuses. The
+   checkpoint's vocabulary, masks as hashes: 302 walks, 5605 masks, 5451 equal, 79 under the narrowed schema,
+   75 not held (the text before them ends in an open escape or ED, where a hash cannot say which tokens
+   differ). The meant differences, each tested as such: special tokens never allowed (xgrammar handed the
+   token's text takes one in a string: one walk each vocabulary); well-formed UTF-8 (ED A0..BF refused); an
+   escaped surrogate needs its partner (seven documents xgrammar takes, each refused at the surrogate);
+   `minItems`/`maxItems` with neither `type` nor `items` is an array within its bounds where xgrammar takes
+   any value. What the comparison found: `"properties": {}` was read as an open object and xgrammar takes
+   `{}` alone (fixed to xgrammar's); xgrammar does not read `~1` in a `$ref` pointer (the corpus avoids it; the
+   Zig tests keep it); and xgrammar's mask at 8262b5c lacks tokens its own `AcceptToken` takes after an object
+   reached through `"$ref": "#"` (`},`, `}]`, `},{` on the checkpoint's vocabulary; not on the same schema
+   written without recursion). The generator puts such tokens to the acceptor and writes them into the mask:
+   32 in the checkpoint fixture, none in the tiny one. The fixtures are in `src/text/testdata/`, not
+   `src/testdata/` (Decisions).
+2. *Properties, seeded.* "properties: what the masks take is a valid document, a valid document is taken
+   however it is cut, no position is a dead end, and a mask is its prefix's alone": 60 rounds a schema
+   on the tiny tokenizer (seed 0x5eed_017), 6 rounds on the checkpoint's. Soundness is judged by
+   `Validator`; completeness by documents written from the schema and cut longest, shortest and at random; the
+   stop is in the mask exactly when the document is complete; the same prefix reached by another path gives
+   the same bits. And "a schema changed at random compiles or is refused...": 4000 changed schemas (each
+   outcome asserted more than 400 times), which found that a typeless alternative under `oneOf` let a document pass two
+   branches; now refused.
+3. *Refusals.* 42 keywords that are not read, each refused by name in 11 places; malformed schemas
+   are errors; nesting past 64 schemas, a schema past 1 MiB, a literal or a name past 1024 bytes are refused
+   with the bound (a 100,000-deep value does not crash). `accept` adds at most two frames a byte; a 20,000-item
+   reply stays within it, and past `Options.max_frames` (4,194,304; 5000 in the test) the constraint fails
+   with `ConstraintFailed` and the next reply starts clean.
+4. *Unconstrained requests untouched.* The `session.zig` test above, and on the checkpoint the reply without a
+   constraint is byte for byte main's, drafted and serial (below).
+5. *Matcher mutations*, 24, each seen to fail (the tests are named by their first words; "oracle" is "the
+   masks are xgrammar's..."): a wrong escape state (`\x` taken; three hex digits): documents, oracle,
+   properties. `required` not checked at `}` (after a value; in an empty object; a required key skippable):
+   documents, properties, fuzz, oracle. `minItems` off by one, `maxItems` off by one: documents, properties,
+   oracle. `$ref` to the wrong definition: six tests. The stop one step early: documents, properties, fuzz,
+   oracle. A lone low or high surrogate, an encoded surrogate, a leading zero, `-0` as an integer, a 33rd
+   blank, a control character, a comma after the last property: documents and oracle, most also properties.
+   The cache key without its count: documents, properties, interface. A special token taken: properties,
+   fuzz, oracle, interface. A typeless `oneOf` alternative kept, an `enum` not checked against its `type`:
+   the refusal tests. Typeless keywords dropped: five tests. Frames unbounded: the long-reply test.
+   `"properties": {}` open again: the oracle alone. One more was tried and changes nothing: the check that an
+   object has a property left before a key begins cannot be reached, the comma before it being refused first.
+
+**The checkpoint** (published NVFP4, `fc694b54`, ReleaseFast, each run a full load under the lock). Schema: a
+Pydantic `Person` (`$ref`, `anyOf` with null, an enum, an array of 1 to 4), prompt "Describe a fictional
+software engineer named Mira Okafor who lives in Lisbon and speaks three languages, as a JSON record."
+
+- `--no-thinking --seed 7 --temperature 0.8`: drafted and `--serial` wrote the same bytes,
+  `{"name": "Mira Okafor", "age": 31, "address": {"street": "Rua da Prata", "city": "Lisbon", "post":
+  "1100-415"}, "kind": "home", "languages": ["English", "Portuguese", "Igbo"]}` (pretty-printed by the model
+  over 11 lines), 94 tokens, ended by the model. Drafted: 25 steps, 80 drafts, 69 kept, 14 cut before their
+  window, 48.0 tok/s; serial 18.6 tok/s.
+- Thinking on, greedy: drafted and serial the same bytes again (211 tokens with the reasoning, 104 rows
+  masked, 29 drafts cut), 44.5 against 18.8 tok/s.
+- All four replies validate against the schema with Python's `jsonschema` 4.10.3.
+- The mask's cost: the constraint compiled in 42 ms (most of it the `Vocabulary`, once a process); 95 rows
+  masked in 15.5 ms drafted and 17.1 ms serial, 163 and 180 us a row on a first reply, when each kind of place
+  is met for the first time. That is 0.8% of the drafted reply's 1.96 s. WS-01 measured 1.2 us warm.
+- Without a constraint, this branch against main at 4beef04, "Explain in one paragraph why the sky is blue.",
+  greedy, 115 tokens: 35.8 against 35.9 tok/s drafted, 19.0 against 19.0 serial, the replies byte for byte
+  the same. One run each.
+
+**Evidence.** `ZSPARK_FLASH_NEXT=... ZSPARK_REFERENCE=... zig build test --summary all`: 217 passed, 8
+skipped of 225 (main: 203 and 9 of 212). `zig test src/text/json_schema.zig`: 17 passed, 5 skipped; with
+`ZSPARK_FLASH_NEXT` and `-OReleaseSafe` 21 passed, 1 skipped. `zig test src/server_tests.zig`: 63 passed, 2
+skipped. `zig build check-specs` passes; `zig fmt` clean.
+
+**What WS-03 gets.** `session.ReplyOptions.constraint: ?grammar.Constraint`. The server makes one
+`json_schema.Engine` beside its tokenizer (`Engine.init(gpa, &tokenizer, config.vocab, config.eos)`),
+compiles a request's `response_format` or tool parameters with `engine.interface().compile(gpa, spec,
+&diagnostic)`, turns `InvalidSchema` and `UnsupportedSchema` into a 400 with `diagnostic.message()`, passes
+the constraint to the reply and calls `deinit` after it. `Reply.masks` has the counts. A reply whose mask
+comes out empty fails with `ConstraintFailed`. `tool_choice: "required"` is the call gate, not this; the
+refusals in `openai.zig` are untouched.
+
+**Limits, known.** The matcher's are in `src/text/AGENTS.md`: a schema whose every document is infinite never
+reaches a stop; a literal with a byte the tokenizer lacks leaves an empty mask; integers and strings have no
+length bound, so a reply can run to `max_tokens` inside one and be cut there, unparseable. Objects are closed
+and ordered as xgrammar's. One constraint serves one reply at a time. Grammars that share an engine must not
+fill at once (shared rounds, spec 018, will need a lock or a cache a request).
+
+**Not done, not run.** The HTTP fields, the call gate and the refusals (WS-03). No hybrid or EXL3 checkpoint
+was run under a constraint. The unconstrained speed is one run each, not a distribution. The checkpoint
+fixture holds hashes, so its 75 masks after an open escape or ED are not held there (the tiny fixture names
+every token at such places). xgrammar was compared at one commit, in strict mode with any whitespace, as
+TensorFold calls it; `json_object` was compared as `{"type": "object"}`. The Python wheel TensorFold runs was
+not compared. A warm mask's cost inside the decoder was not measured apart from the first reply's.
+
+**Next.** WS-03.
+
+### 2026-10-05 — WS-03: structured output through the three APIs, and required tool calls (Claude subagent, branch `spec-017-http`)
+
+**Changed.**
+
+- `src/text/call_gate.zig` (new): a required call as a `grammar.Constraint`. The reply is
+  `<tool_call>\n{"name": "NAME", "arguments":` ARGUMENTS `}\n</tool_call>`, then an end token, or a line and
+  another call unless one call alone was asked for. Forced: the opener, the frame's literal tokens and the
+  close, each a mask with one bit. Chosen by the model among what the gate allows: the name (a trie over the
+  offered names' tokens, one name when a function is named), the end or another call. Grammar-constrained: the
+  arguments, by the chosen tool's own `parameters` compiled by the engine. Thinking comes before the gate, as
+  before a schema: `masks.zig` starts a constraint at the token after `</think>`.
+- `src/server/structured.zig` (new): `Compiler.compile` turns a request's `backend.Structure` into the
+  constraint (a document through the engine, a call as the gate) or into `error.BadRequest` with the sentence.
+- `src/server/backend.zig`: `Structure` (`document{spec, field}` or `call{single}`) and `Request.structure`.
+- `src/server/openai.zig`, `responses.zig`, `anthropic.zig`: the fields, mapped as below; the refusals of
+  `response_format`, `text.format`, `output_config.format`, `tool_choice` required and `any` are gone. Image
+  refusals stay (spec 019).
+- `src/flash_next/session.zig`: `Chat.compiler`; `generate` compiles before the prompt runs, passes
+  `ReplyOptions.constraint`, frees it after the reply, and logs the compile time beside the masks' counts.
+  `src/main.zig`: `serve` makes the one `json_schema.Engine`. Nothing else in `session.zig` changed, and
+  `mtp.zig`, `draft.zig`, `forward.zig` and `masks.zig` are untouched.
+- `tools/reference/openai_exchange.py`, `responses_exchange.py`, `anthropic_exchange.py`: the structured cases.
+
+**Field mappings.**
+
+| API | Field | Becomes |
+| --- | --- | --- |
+| Chat | `response_format` `json_object`; `json_schema` (its `schema` an object, a JSON string, or `true`); `guided_json`; `structured_outputs.json`, `.json_object` | a document |
+| Chat | `guided_regex`, `guided_choice`, `guided_grammar`, `structured_outputs.regex`, `.choice`, `.grammar` | 400: no regex or EBNF engine |
+| Chat, Responses | `tool_choice` `"required"`, `{type: function}` named, `allowed_tools` with mode `required` | a call; `parallel_tool_calls: false` makes it one call |
+| Responses | `text.format` `json_object`, `json_schema` | the chat `response_format`, refusals naming `text.format` |
+| Messages | `output_config.format` `json_schema` | the chat `response_format`, refusals naming `output_config.format` |
+| Messages | `tool_choice` `any`, `tool` | `required`, a named function; `disable_parallel_tool_use` makes it one call |
+
+`strict` (`json_schema.strict`, a function's, `text.format.strict`) is not read, as in TensorFold's parser: the
+schema is always enforced. An unread keyword is a 400 whatever `strict` says (TensorFold hands the schema to
+xgrammar). A document beside a required or named call is a 400; a required call with no tools is a 400.
+
+**Departures from TensorFold's `CallGate`**, also in `call_gate.zig`'s header. TensorFold lets the reply run,
+cuts it at the first token that cannot be a call, splices `<tool_call>\n<function=` and resumes; it constrains
+neither the name nor the arguments, allows blank lines before the opener, and nothing after the first call.
+zspark masks every row: no token is ever sampled and taken back, so drafted equals serial by the same
+argument as for a schema. The call is the JSON payload, not the template's `<function=NAME><parameter=K>`,
+because a parameter's raw text has no grammar for its type; the name is one of the offered ones; the arguments
+validate; nothing precedes the opener; after a call only the end or another call.
+
+**Tests.** `zig test src/server_tests.zig`: 96 passed, 7 skipped.
+`zig test src/text/call_gate.zig`: 22 passed, 5 skipped.
+
+- The gate alone (`call_gate.zig`): what is forced is one bit a mask; a named function is that function; the
+  tool decides the schema; over seeded random and greedy walks every reply parses as calls of offered names
+  whose arguments `json_schema.validates` takes; a token is taken exactly where its bit is set.
+- `structured.zig`: free text compiles nothing; each tool's `parameters` case (absent, null, no `type`,
+  `strict` and annotations beside it, not an object, an unread keyword, a duplicate name) taken or refused
+  with its sentence; two tools each held to their own schema.
+- The parsers: each field of the table to its `Structure`, and each refusal's message.
+- `http.zig`, over a backend that compiles as the real one does and walks the masks at random (`sx.Masked`):
+  a schema in each API whole and streamed, with `strict` true, false and absent, the content validated;
+  `json_object`, `guided_json`, `structured_outputs`; required, named and single calls in each API whole and
+  streamed, with a second turn (chat history, `previous_response_id`) still gated; the 400 in each API's
+  shape naming `pattern`, streamed or not, for a schema and for a tool's parameters, and `auto` with the same
+  tool served; an unconstrained request in each API compiles nothing and makes no matcher call
+  (`json_schema.calls` unchanged over 18 replies); 12 structured requests and 12 `count_tokens` at once.
+- The random model (`session.zig`, `zig build test -Dtest-filter="required tool call"`): two tools, one call
+  alone, and a named function; four samplings (greedy and three sampled), and the greedy one with thinking on too; depths
+  `max_rows - 1`, 1 and 0. Drafted is serial, token for token, in all 45 replies; every reply is whole calls
+  of offered tools with arguments their schemas take; 2782 drafts cut; both tools called.
+
+**Mutations, each seen to fail** (`python3` over the sources, restored after; the tests that failed):
+
+| Mutation | Failed |
+| --- | --- |
+| The structure dropped when `stream` is true | 4 `http.zig` tests (document, call, 400, concurrency) |
+| A named function ignored among several tools | 9, among them the three parsers' and `http.zig`'s call test |
+| Every call's arguments under the first tool's schema | 6: the gate's three, `structured.zig`'s, `http.zig`'s two |
+| The constraint dropped on a request with history | `http.zig`'s call test (the second turn) |
+| `strict: false` served unconstrained | 3: the chat parser's, `http.zig`'s document and 400 tests |
+| `auto` gated as `required` | 7, among them "compiles nothing and asks no mask" |
+| `parallel_tool_calls: false` ignored | the three parsers' tests |
+| A document beside a required call accepted | the three parsers' tests |
+| A refused schema as `error.Failed` (a 500) | `structured.zig`'s and `http.zig`'s 400 test |
+| `parameters` without `type` left untyped | `structured.zig`'s parameters test |
+| The gate lets the reply end inside the arguments | the gate's walk test, `http.zig`'s call and concurrency tests |
+| The gate closes before the arguments are complete | the gate's walk test |
+| A second call allowed when single | the gate's walk test |
+| Messages `any` mapped to `auto` | the Messages parser's test |
+
+**Concurrency.** Schema compilation and mask filling run only inside `Backend.generate`, which `http.zig`
+calls under `Server.decoding`; `Backend.count` reads the template and the tokenizer and never the engine. So
+no two compile or fill at once, and the engine's shared `Vocabulary` and caches need no lock. Tested:
+`http.zig`'s last test sends 12 structured requests over the three APIs with 12 `count_tokens` beside them
+and asserts that the backend never saw two replies at once (`most_active == 1`) and that every reply
+validates. Shared rounds (spec 018) will need a lock or a cache a request, as WS-02 said.
+
+**The checkpoint** (published NVFP4 `fc694b54`, ReleaseFast, `zspark serve` on 127.0.0.1:8017, the `openai`
+and `anthropic` packages; run twice, 12:01 and 12:20, each a full load of 23 to 24 s under the lock; all three
+scripts exit 0 both times, each reply checked by the script with `jsonschema` or Pydantic):
+
+- `json_schema`, whole and streamed, thinking on and off, in each API: `{"city": "Lisbon", "population":
+  545796, "landmarks": ["Belém Tower", "Jerónimos Monastery", "São Jorge Castle"], "coastal": true}`, the same
+  text all four ways in chat; `json_object`: `{"name": "tea", "type": "beverage"}`.
+- A Pydantic `Person` (`Address` by `$ref`, `nickname: Optional[str]`, a list), whole and streamed in each
+  API, parsed back into the model: Aiko Tanaka (Kenji Tanaka through Messages), 34, Kyoto, Japan, Japanese and
+  English; and through the SDK's own `chat.completions.parse()` and `responses.parse()`, which send
+  `strict: true`, the same with `nickname='Aiko'`.
+- `tool_choice` required, whole and streamed: chat `get_time {"timezone":"UTC","hours24":true}`; Responses
+  `get_weather {"city":"Ada","days":1,"units":"c"}`; Messages `any`
+  `get_time {"timezone":"Europe/London","hours24":true}`. Named, in all three:
+  `get_time {"timezone":"Europe/Paris","hours24":true}`. Responses, required again after the call's result
+  through `previous_response_id`: `get_time {"timezone":"Asia/Tokyo","hours24":true}`. Arguments validated
+  against the tool's schema by the script.
+- Refused, 400, in each API's shape: `response_format` (`text.format`, `output_config.format`)`: the schema
+  cannot be enforced: #/code: `pattern` is not read`, whole and streamed; `tool_choice: a required tool call
+  cannot be enforced: tool 'lookup': its parameters: #/code: `pattern` is not read`; a format beside a
+  required call; a `json_schema` without a schema. The same patterned tool under `auto` is served ("Hi! How
+  can I help you today?"). `count_tokens` beside a schema that a reply would be refused for: 13.
+
+**Measured** (goal 4; `scratchpad/measure.py`, 12:18 to 12:20, under `flock -x machine.lock flock gpu.lock`,
+`uptime` load 2.24 before and 1.85 after; chat API, thinking off, temperature 0.6, `max_tokens` 400, two warm-up
+requests not counted, then seeds 1 to 5 with a different subject each; the decode speed is the server's own
+"reply N tokens in S s" line, so the prompt and HTTP are outside it):
+
+| Request | n | Tokens | tok/s mean (min to max) | Mask, us a row | Mask's share of the reply | Drafts cut |
+| --- | --- | --- | --- | --- | --- | --- |
+| city object, free | 5 | 113 to 127 | 46.8 (41.6 to 53.8) | | | |
+| city object, `json_schema` | 5 | 113 to 127 | 49.1 (43.3 to 57.4) | 69.6 (69.0 to 70.2) | 0.3 to 0.4% | 15 to 24 |
+| team of six (`$ref`, enum, `anyOf` null), free | 5 | 298 to 307 | 72.6 (62.2 to 77.3) | | | |
+| the same, `json_schema` | 5 | 298 to 307 | 74.3 (63.6 to 79.4) | 52.7 (51.7 to 53.7) | 0.3 to 0.4% | 7 to 14 |
+| weather call, `auto` | 5 | 50 to 51 | 74.0 (60.8 to 80.5) | | | |
+| weather call, `required` | 5 | 29 to 34 | 37.6 (31.6 to 43.0) | 47.1 (38.2 to 52.5) | 0.1 to 0.2% | 38 to 61 |
+
+- With the same seed the constrained reply had the free reply's token count in all ten pairs (the model wrote
+  valid JSON unasked), so the pairs compare like with like. The constrained side is not slower; its 2 to 3%
+  lead is inside the spread and it always ran second, so nothing is claimed from it. Cut drafts are drafts the
+  window would have rejected anyway.
+- A mask is 50 to 70 us a row warm (WS-02 measured 160 to 180 on a process's first reply; the first
+  constrained reply here, a warm-up, was 144). Compiling took 0.01 to 0.03 ms a request; the `Vocabulary` is
+  built once, when `serve` starts.
+- A required call is half the speed a token of the same call under `auto`: the MTP head drafts the template's
+  XML call, the gate allows the JSON payload only, and 38 to 61 drafts were cut for about 30 rows, so most
+  steps were serial. The gated call is fewer tokens (29 to 34 against 50), and the reply still took 0.86 s against
+  0.69 s (means of five). This is the cost of the JSON form (Decisions).
+
+**Evidence.** `zig build test --summary all`, as two invocations under the locks: with the NVFP4 and hybrid
+variables 236 passed, 6 skipped of 242 (main at the branch point: 219 and 6 of 225); with the EXL3 variables
+224 passed, 18 skipped of 242 (main: 207 and 18). The 17 tests added all run in both. `zig build check-specs` passes; `zig fmt src build.zig tools` clean.
+
+**Limits, known.**
+
+- A document format beside tools under `auto` is enforced and no tool can be called (TensorFold's behaviour).
+- A reply cut by `max_tokens` inside a document or a call is unfinished: `finish_reason` `length`, and a cut
+  call is content, not a call.
+- The matcher's limits are the server's: `pattern`, `format`, `allOf`, numeric and length bounds are refused;
+  objects are closed and ordered; a string or an integer has no length bound.
+- The gate's speed, above.
+
+**Not done, not run.**
+
+- No reply with several calls was seen on the random model or on the checkpoint: the model ended after one
+  each time. The second call's path is covered on the host only (the gate's walks and `http.zig`).
+- The hybrid checkpoint and the EXL3 pack were not served under a constraint; only their gated test runs ran.
+- The measurements are one process, five requests a row, the chat API only; the constrained request always
+  followed its free twin. Thinking was off; with thinking on the reasoning is unmasked and was not timed.
+- The exchanges were not run against TensorFold's server, so "as TensorFold" for `strict` and for a document
+  beside `auto` tools is from reading its source, not from a reply.
+- `guided_regex`, `guided_choice`, `guided_grammar`: refused, not built (out of scope).
+
+**Next.** The coordinator merges `spec-017-http`; then the spec can be closed. A follow-up worth its own
+measurement: let the gate take the template's XML form for tools whose parameters are all strings, or teach
+the drafter the forced tokens, to win the drafts back.
+
+### 2026-10-05 — coordinator: WS-03 merged, the spec closed
+
+Rebased onto main (spec 020's `prepare` beside the engine in `serve`: one conflict in `src/main.zig`, both sides
+kept). On the rebased branch, spark-a, in a worktree of its own: `zig test src/server_tests.zig` 96 passed, 7
+skipped; `zig test src/text/call_gate.zig` 22 passed, 5 skipped; the gated run on NVFP4 and the hybrid 238 passed,
+6 skipped of 244; on the EXL3 pack 226 passed, 18 skipped of 244. (A first run of these was void: a worker started
+from that directory had switched its branch, so it tested main.)
+
+## Completion summary
+
+Completed 2026-10-05. A reply can be held to a JSON schema or to a required tool call: a Zig matcher
+(`src/text/json_schema.zig`, checked against xgrammar's masks, which stays the oracle and is not linked) behind
+`grammar.Constraint`, its mask applied on the host to each downloaded row (`flash_next/masks.zig`), so a drafted
+reply equals the serial one under a constraint, greedy and sampled. `zspark chat --schema` and `--json`, and in
+`zspark serve` the three APIs' fields (`response_format`, `text.format`, `output_config.format`, `guided_json`,
+`tool_choice` required or named, Anthropic's `any` and `tool`); the `openai` and `anthropic` packages completed
+the exchanges on the published NVFP4 checkpoint. A schema costs 50 to 70 us a row (0.3 to 0.4% of a reply) and
+nothing per request worth counting.
+
+Left as they are: a required call decodes at about half the tokens a second of a free one (37.6 against 74.0
+tok/s), because the head drafts the template's XML call and the gate asks for the JSON form, so its drafts are
+cut; schema keywords the matcher does not read (`pattern`, `format`, `allOf`, numeric and length bounds) and
+`guided_regex`, `guided_choice`, `guided_grammar` are a 400; a document format beside tools under `auto` enforces
+the document; a reply cut by `max_tokens` inside a document is unfinished; no reply with several calls came from
+the checkpoint (that path is tested on the host); the hybrid checkpoint and the EXL3 pack ran the tests but
+served no constrained request; the exchanges were not run against TensorFold's own server.
+---
+id: "020"
+title: "The step's and the windows' graphs captured at load"
+status: Completed
+created: 2026-10-05
+updated: 2026-10-05
+coordinator: "Claude (Opus 5.5), with shuuul deciding scope"
+---
+
+# 020 — The step's and the windows' graphs captured at load
+
+## Context
+
+A drafted reply runs its windows as CUDA graphs, one for each window size, bucket of context and state side
+(`forward.Graphs`, `mtp.Graphs`), and each is captured the first time a reply needs it. Spec 014 measured what
+that costs on the EXL3 pack (spark-a, `-Doptimize=fast`): a first drafted reply to `sky` runs at 60.5 to 62.8
+tok/s and the same reply once its graphs exist at 67.6 to 69.9, against TensorFold's 70.1 to 71.4; a capturing
+window costs about 45 ms. Acceptance equals TensorFold's, so the capture is the whole gap. TensorFold captures
+its 21 graphs while it loads (its load with them takes 3 to 7 s longer).
+
+## Goal and success criteria
+
+- [x] `chat` and `serve` capture at load the graphs a reply uses, so a first reply captures none: the count of
+      graphs captured during a first reply is zero for the reference prompts, shown by a test or a printed count.
+- [x] A first drafted reply on the EXL3 pack and on the NVFP4 checkpoint decodes at the speed of a later one,
+      within the run-to-run spread; the load's added time and the device memory the graphs hold are recorded.
+- [x] No bits change: a reply drafted, serial and eager is the same tokens as before, and every existing test
+      passes on both checkpoints.
+- [x] Which keys are captured at load is stated and bounded: what is still captured lazily (deep context
+      buckets, rare window sizes) and why, with an option to skip the capture for commands that do not decode.
+
+## Scope and non-goals
+
+In scope:
+
+- The capture at load for the step, the verify windows and the draft head, on NVFP4, hybrid and EXL3.
+- An option or a rule for commands that should not pay for it (`info`, `compare`, `score`, `--serial --eager`).
+
+Not in scope:
+
+- Choosing the greedy token on the device, and the draft head's 6 ms (spec 014's other candidates).
+- Prompt windows' speed on the pack.
+
+## Decisions
+
+| Date | Decision | Rationale | Affected workstreams |
+| --- | --- | --- | --- |
+| 2026-10-05 | Capture at load, as TensorFold does | The owner's instruction, on spec 014's measurement that the capture is the whole first-reply gap | WS-01 |
+| 2026-10-05 | Developed on spark-a, beside spec 017's WS-02, which edits the same decoding files | spark-b times spec 015's prototype. The two branches are merged one after the other; each keeps its edits to `session.zig`, `mtp.zig` and `draft.zig` narrow | WS-01 |
+| 2026-10-05 | A graph is captured without being launched, and only the first bucket of context is captured at load | A capture records launches and runs none, so nothing has to be reset after it and it cannot change a reply. A bucket is 80 graphs, 0.15 to 0.25 s and 130 to 180 MiB in `serve`; a 262,144-token context has six, and a sequence enters a deeper one once a doubling | WS-01 |
+
+## Workstreams
+
+Use `Pending`, `Claimed`, `In progress`, `Blocked`, or `Done`.
+
+| ID | Deliverable | Owner | Status | Dependencies | Verification |
+| --- | --- | --- | --- | --- | --- |
+| WS-01 | The graphs a reply uses captured at load; the keys chosen and bounded; the measurements; docs | Claude subagent | Done | None | No capture in a first reply; first-reply tok/s beside a later reply's; both gated test runs |
+
+## Verification
+
+- `zig build test --summary all` with the NVFP4 variables and, in a second invocation, with the pack's.
+- First and later drafted replies to `sky` and `primes` on both checkpoints, `-Doptimize=fast`.
+- `zig build check-specs`.
+
+## Documentation sync
+
+- Durable product/developer docs: `README.md` (the load and decoding figures).
+- Nearest local `AGENTS.md`: `src/flash_next/AGENTS.md` (when graphs are captured).
+- Root guidance and roadmap: `AGENTS.md` ("Beside the roadmap").
+
+## Progress and handoff
+
+Append entries rather than rewriting another worker's record.
+
+### 2026-10-05, WS-01: the graphs captured while the model loads (Claude subagent, branch `spec-020-graphs-at-load`)
+
+Written by the subagent at the coordinator's request. The branch starts at 9174158. spark-a, every GPU command
+under `flock ~/.cache/zspark/gpu.lock`, `-Doptimize=fast` for every timing; TensorFold was not run.
+
+Changed: `src/flash_next/forward.zig` (`Graphs.prepare`, `prepareWindows`, `bucketAfter`),
+`src/flash_next/mtp.zig` (`Graphs.prepare`, `Head.prepare`), `src/flash_next/session.zig` (`Session.prepare`,
+`prepared_buckets`, two tests), `src/main.zig` (`chat` and `serve` call it and take `--lazy-graphs`; drafted
+`generate` does the same and takes `lazy`; the counts printed); `README.md`, `src/AGENTS.md`,
+`src/flash_next/AGENTS.md`. Every edit to the decoding files is an added function: `forward`, `run`, `round`,
+`drafts` and `reply` are untouched, for the merge with spec 017's branch.
+
+How. A capture records its launches and runs none, so `prepare` captures a graph without launching it: no
+buffer, no state and no cache is written, nothing is reset afterwards, and it may be called at any time. The
+one thing it touches on the host is `State.current`, which `compute` reads: it is put on the side being
+captured and back. TensorFold's `warm` runs each window before capturing it and resets the state after.
+
+The rule for the keys. For a session whose replies draft up to d a round:
+
+- the step: windows of 1 to d + 1 rows on either DeltaNet state side, 2(d + 1) graphs. d is `--depth` (6) in
+  `chat` and `generate`, and `ReplyOptions.depth` (15) in `serve`, which is what a request's reply runs with;
+- the head, 48 whatever d is, because a prompt's last window is as wide as the buffers score (16 rows): 1 to
+  16 rows of the main model's streams absorbed, the last scored or not (a round's kept rows, a prompt's last
+  windows, a reply's end), 32 graphs; and a chained draft's one row read from each of the 16 rows of the head's
+  own streams, 16 graphs (the key holds the address the streams are read from);
+- over the first bucket of context only (`session.prepared_buckets` = 1): sequences that end within 8192
+  tokens, or the context where it is smaller (`chat`'s 4096).
+
+So 62 graphs in `chat` and `generate` (14 and 48; TensorFold's 21 are 14 and 7, its head key being the rows
+alone) and 80 in `serve` (32 and 48). Left to the window that first needs one: the buckets past 8192 (16384,
+32768, ... up to `--context`: as many graphs again at most for each, entered once a doubling, so six buckets
+at 262,144 tokens; captured at load they would be 0.15 to 0.25 s and 130 to 180 MiB each, for contexts most
+sessions never reach); a prompt's windows, which run eagerly as before; and a reply asked for more drafts than
+the session prepared (`Session.reply` with a deeper `depth`). Who does not pay: a session without a head
+(`--serial`, `--depth 0`) prepares the one-row step's two graphs; `--eager` none; `--lazy-graphs` (`generate
+... lazy`) none, each graph captured by its first window as before; `info`, `compare`, `score`, `trace`,
+serial `generate` and the tests' `compare.Bench` make no session and are unchanged.
+
+Measured (three runs each; base is 9174158; `sky` and `primes` are the references' prompts, 23 tokens, greedy,
+no thinking; `serve` is one server for each run, three requests a prompt, both orders):
+
+| | EXL3 pack, before | EXL3 pack, after | NVFP4, before | NVFP4, after |
+| --- | --- | --- | --- | --- |
+| Graphs captured at load, `chat` / `serve` | 0 / 0 | 62 / 80 | 0 / 0 | 62 / 80 |
+| Time capturing them, `chat` / `serve` | | 108 to 129 ms / 204 to 251 ms | | 64 to 76 ms / 146 to 168 ms |
+| Graphs captured by the first reply, `chat` `sky` / `primes` | 24 / 8 | 0 / 0 | 24 / 8 | 0 / 0 |
+| Load, `chat` | 10.6 to 11.0 s | 10.7 to 11.1 s | 21.0 to 22.0 s | 21.2 to 21.7 s |
+| Load, `chat --serial` | 9.3 to 9.5 s | 9.3 to 9.4 s | 20.2 to 20.4 s | 20.1 to 20.3 s |
+| Load, `serve` | 10.6 to 10.8 s | 10.8 to 11.4 s | 21.0 to 22.0 s | 21.2 to 21.5 s |
+| Device, `chat` `sky`, peak (`nvidia-smi`) | 58,259 to 58,263 MiB | 58,290 MiB | 82,990 MiB | 83,018 MiB |
+| Device, `chat --serial` | 56,509 MiB | 56,509 MiB | 80,853 MiB | 80,853 MiB |
+| Device, `serve` after load / after six replies | 58,235 / 58,664 MiB | 58,412 / 58,744 MiB | 82,985 / 83,388 MiB | 83,117 / 83,449 MiB |
+| `sky` 64 tokens, `chat` (a first reply) | 56.1 to 56.6 tok/s | 60.7 to 62.1 | 36.5 to 36.9 | 37.8 to 38.1 |
+| `sky`, `chat --lazy-graphs` | | 56.6 to 57.8 | | 36.7 to 36.9 |
+| `sky`, `serve`, the server's first reply | 55.8 to 56.3 | 59.5 to 61.2 | 35.9 to 36.1 | 37.5 to 37.6 |
+| `sky`, `serve`, first after `primes`' replies | 55.6 to 57.7 | 59.6 to 62.0 | 34.2 to 35.9 | 37.3 to 37.4 |
+| `sky`, `serve`, later replies (12) | 59.3 to 61.9 | 57.9 to 62.6 | 35.8 to 38.0 | 37.9 to 38.2 |
+| `primes` to its end token (14), `chat` | 101.3 to 104.0 | 116.7 to 119.9 | 75.5 to 77.6 | 79.4 to 81.5 |
+| `primes`, `serve`, the server's first reply | 71.5 to 79.5 | 85.3 to 87.5 | 61.2 to 68.2 | 73.0 to 73.3 |
+| `primes`, `serve`, later replies (12) | 79.6 to 88.3 | 79.6 to 88.5 | 67.0 to 73.7 | 70.4 to 74.1 |
+| `generate` `sky` 64 / `primes` 32 | 56.4 to 57.6 / 60.4 to 62.7 | 60.6 to 61.7 / 66.8 to 68.2 | 36.0 to 36.1 / 49.0 to 49.3 | 37.2 to 37.6 / 51.3 to 52.2 |
+| `sky` serial, `chat --serial` | 33.0 to 33.4 | 33.1 to 33.5 | 18.9 to 19.2 | 19.2 |
+
+Reading it: on the pack a first reply is inside the later replies' spread after the change (`sky` 59.5 to
+62.1 against 57.9 to 62.6). On NVFP4 the gap closes from about 1.5 tok/s to about 0.5 and not to nothing:
+`serve`'s first replies are 37.3 to 37.6 against 37.9 to 38.2 for the later ones, 0.3 to 0.6 tok/s (1 to 2%)
+under their low end, with no graph left to capture; `chat`'s first reply (37.8 to 38.1) is level with them.
+What the remainder is was not found. The load takes 0.1 to 0.25 s more, inside its own spread. The graphs hold about
+30 MiB more than a lazy `chat`'s 24 did, and 177 MiB (pack) or 132 MiB (NVFP4) in `serve` after the load, 80
+and 61 MiB more than a lazy server after six replies: about 2 MiB a graph. `chat`'s `primes` is faster after
+than `serve`'s later replies because `chat` drafts 6 deep and `serve` 15.
+
+Two things the table does not show as spec 014 had them. Later replies decoded at 58 to 63 tok/s on the pack
+today, before and after the change, where spec 014 measured 67.6 to 69.9 on the same prompt through `serve`;
+the first-reply figures of the base (55.6 to 57.7) are also under spec 014's (60.5 to 62.8), so the machine
+or the build was about a tenth slower today, and the comparison with TensorFold's 70.1 to 71.4 was not
+repeated. And the capture itself was never the 45 ms a window that the gap suggested: 24 graphs took 43 to 82
+ms in all by `chat`'s count, but `generate` spent 0.51 s (pack) and 0.65 s (NVFP4) in the windows that
+captured (26 graphs each); the rest was not taken apart, and is presumably what a capture costs the window
+around it. With the graphs captured at load `generate` reports 0.00 s in such windows, which is why the gain
+is larger than the capture time.
+
+No bits changed. md5 of the reply before and after, the same in every row: `generate DIR 128` for `sky` and
+`primes`, drafted, `serial` and `eager`; `chat --temperature 0 --max-tokens 128 --specials` for both prompts,
+drafted, `--serial`, `--eager` and `--serial --eager`: 14 replies a checkpoint, on the pack and on NVFP4, and
+within a checkpoint the modes agree with each other as before. The hybrid checkpoint's replies were not hashed;
+its gated tests ran.
+
+Tests (`session.zig`, the random model with windows of 16 rows and prompts of up to 96):
+
+- "graphs captured before the first reply: no reply captures another, and its tokens and drafts are a
+  session's that captures as it goes": the counts (2(d + 1) + 48; 0 for an eager session; 2 without a head),
+  every buffer as `create` left it after `prepare`, then four turns (a prompt of several windows, a next turn
+  from the live state, a short prompt, depths 15, 6 and 1, greedy and sampled) with `confidence` 0.7 and 0 (0
+  chains to the depth, so windows of every size are met): the session's count never moves, and tokens, the
+  drafts' digest, the stats and the cached count equal a lazy session's.
+- "graphs captured between two turns leave every buffer and the state's side as they were, and the next reply
+  is the same": `prepare` before each of four turns in turn, over two buckets (a 9000-token context), with the
+  committed state met on either side; the bytes of both sides of every DeltaNet state, the conv inputs, the
+  streams, logits and positions are equal before and after, and every reply and its drafts equal the session
+  that never prepared.
+
+Mutations, each seen to fail and restored:
+
+- `forward.Graphs.prepare` launching what it captured: both tests, the state's bytes differ at index 0.
+- `mtp.Graphs.prepare` launching: both tests, the head's bytes differ.
+- `State.current` not put back: both tests, the bytes differ (the side).
+- With the tests' own counts of what `prepare` made left out, so that only the reply's counter speaks: one
+  state side only (64 expected, 66 found); no chained-draft graphs (64, 66); a chained draft always read from
+  row 0 (65, 66); absorbed rows scored only (64, 65); windows one row short (78, 80). With the counts in, each
+  fails there first (56 expected; 52, 40, 41 and 54 were found).
+- The first bucket taken as 8192 where the context is 256: the test aborts on an assertion, not on a count.
+
+Runs: `zig build test --summary all` with `ZSPARK_FLASH_NEXT_EXL3_3_05BPW` and `ZSPARK_REFERENCE_EXL3_3_05BPW`: 198 pass, 16 skip of 214 (main: 196 and 16 of 212). With
+`ZSPARK_FLASH_NEXT`, `ZSPARK_REFERENCE`, `ZSPARK_FLASH_NEXT_HYBRID` and `ZSPARK_REFERENCE_HYBRID` in a second
+invocation: 208 pass, 6 skip of 214 (main: 206 and 6 of 212). `zig fmt --check`, `zig build check-specs` and `zig test src/server_tests.zig` (63 pass,
+2 skip) pass.
+
+Criteria: 1 met (the test, and `chat` and `generate` print 0 graphs captured by the reply for `sky` and
+`primes` on both checkpoints; `serve` prints what it captured at load and not a reply's count, so for it the
+evidence is the test at `serve`'s depth and the first reply's speed). 2 left open: met on the pack and in
+`chat` on NVFP4, but `serve`'s first reply on NVFP4 is 1 to 2% under the later replies' spread; the load's
+time and the memory are recorded. 3 met. 4 met.
+
+Not done, not run, or uncertain:
+
+- A reply's count of captured graphs is not in `serve`'s log line.
+- No real prompt past 8192 tokens was run: the lazy capture of a deeper bucket is the code path every reply
+  took before this change, and the two-bucket test prepares it but no reply there reaches it.
+- `serve` verifies up to 15 drafts a round where `chat` defaults to 6 (`ReplyOptions.depth`'s default, not
+  changed here); the 32 step graphs follow from it. If `serve` is given `chat`'s depth, 14 suffice.
+- Today's absolute tok/s are about a tenth under spec 014's, before and after alike; why was not looked into.
+- The hybrid checkpoint was not timed, and `--kv-dtype fp8` and `fp8-nvfp4` were run by the tests only.
+- During the measurements a first copy of the script was not stopped as intended and ran beside the second,
+  each run still alone on the GPU under the lock; every run was done twice and the later result kept.
+
+Next: merge after or before spec 017's branch (the additions do not overlap its functions); README's decoding
+figures for the pack ("60 to 70") can be measured again when the machine is as it was for spec 014.
+
+### 2026-10-05 — coordinator: WS-01 merged; two findings under investigation
+
+Rebased onto main (which had gained spec 017's masks in `session.zig` and `draft.zig`) without a conflict. On the
+rebased branch, spark-a: `zig test src/server_tests.zig` 63 passed, 2 skipped; the gated run on NVFP4 and the
+hybrid 221 passed, 6 skipped of 227; on the EXL3 pack 209 passed, 18 skipped of 227. The "failed command:" line
+in both logs is Zig naming the test binary whose stderr it prints; the build summary reports no failure.
+
+The spec stays open: criterion 2 is unmet on NVFP4 (`serve`'s first reply 1 to 2% under the later ones, with no
+graph left to capture). The worker's two side findings are being investigated on branch
+`investigate-serve-speed`, whose entry follows: `serve` drafts to depth 15 where `chat` drafts to 6, and the
+pack's drafted speed stood a tenth under spec 014's table, with other workers on the machine. Since this
+afternoon a timing run holds `machine.lock` whole (root `AGENTS.md`); the speeds in the entry above were taken
+before that rule and with a second copy of the script running, so they compare before with after and are not
+absolute figures.
+
+### 2026-10-05 — coordinator: the speeds above are void
+
+The owner's ruling: a speed taken beside other work is not evidence. Every tok/s and load time in the two entries
+above is void, as a comparison of before with after too, and criterion 2 is judged on none of them. What stands
+from them: the graph counts, the device memory, that a first reply captures no graph, the unchanged md5 of the
+replies, the tests and the mutations. The table is being retaken at main under `machine.lock` held whole
+(`--lazy-graphs` on the same binary for "before"), by the worker on `investigate-serve-speed`.
+
+### 2026-10-05, the two side findings: the pack's drafted speed, and the depth `serve` drafts to (Claude subagent, branch `investigate-serve-speed`)
+
+Written by the subagent. spark-a, `-Doptimize=fast`. No decoding code is changed and no default. Every timing
+below was taken as `flock -x ~/.cache/zspark/machine.lock flock ~/.cache/zspark/gpu.lock <one load>`, the
+binaries built beforehand under `flock -s`, with `uptime` written beside each run; nothing taken before that
+rule is used. The 1-minute load average beside the runs was 1.6 to 4.2 on the pack and 1.9 to 7.2 on NVFP4:
+with the machine held alone that is the previous load's own reader threads decaying (`ps` during a run showed
+the run and nothing else above 4% of a core).
+
+**Finding A: the cause is the write-back fix `eedfcfa`, through the reply and not through the kernel's time.**
+Spec 014's figures reproduce today at their own commit, so neither the machine nor the method changed.
+
+How spec 014 took them (its scripts and logs were still in the session's scratch directory:
+`w5/steady_inner.sh`, `w5/steady.exl3.log`, `w5/measure_inner.sh`), at 68d459b: one `zspark serve` on the pack,
+the request `{"messages":[{"role":"user","content":"Explain in one paragraph why the sky is blue."}],
+"max_tokens":64,"temperature":0,"enable_thinking":false}` three times, not streamed; the figure is the server's
+own log line, the reply's tokens over the seconds from its first token to its last (`Reply.seconds`, the prompt
+not in it). The three replies logged 63.1, 69.9 and 67.6 tok/s: "67.6 to 69.9" is the second and third, whose
+prompt the session held (21 and 22 of 23 tokens). The `chat` figure is the same prompt with `--no-thinking
+--temperature 0 --max-tokens 64`, a load a run. Spec 020's worker used the same prompt, body and log line.
+
+The same script (three `sky` at 64, three at 256, three of spec 014's Fibonacci prompt at 256, three `primes`
+at 64, one server a load) and `chat` drafted and `--serial`, at four commits, three loads each, the binaries
+taken in turn:
+
+| EXL3 pack | 68d459b (spec 014's) | 20f024a (`eedfcfa~1`) | eedfcfa | 1141606 (main before spec 020) |
+| --- | --- | --- | --- | --- |
+| `chat` `sky` 64, drafted | 60.5 to 62.3 tok/s | 58.3 to 61.8 | 54.4 to 57.5 | 56.7 to 57.4 |
+| its steps, drafts kept | 21, 42 of 64 | 21, 42 of 64 | 23, 40 of 63 | 23, 40 of 63 |
+| `chat --serial` `sky` 64 | 33.3 to 33.6 | 33.3 to 33.6 | 33.4 to 33.5 | 33.3 to 33.4 |
+| `serve` `sky` 64, the server's first (3) | 61.8 to 62.5 | 61.0 to 63.4 | 55.7 to 56.9 | 55.2 to 57.0 |
+| `serve` `sky` 64, later (6) | 66.1 to 69.4 | 65.8 to 68.7 | 58.9 to 62.7 | 56.3 to 62.2 |
+| its rounds, drafts kept | 20, 43 of 62 | 20, 43 of 62 | 23, 40 of 62 | 23, 40 of 62 |
+| `serve` `sky` to its end, later (6) | 55.7 to 56.5 (133 tokens, 53 rounds, 79 of 134) | 55.6 to 56.3 (the same) | 55.7 to 56.4 (122 tokens, 48 rounds, 73 of 124) | 55.7 to 56.4 (the same) |
+| `serve` Fibonacci, 204 tokens, later (6) | 85.9 to 87.0 (39 rounds, 164 of 240) | 85.6 to 86.2 | 85.4 to 87.4 (39 rounds, 164 of 235) | 85.4 to 87.0 |
+| `serve` `primes`, 14 tokens, later (6) | 86.8 to 88.7 (1 round, 12 of 23) | 87.4 to 88.7 | 85.6 to 88.6 | 82.7 to 88.4 |
+| the `sky` reply's text | "...interacts with the Earth's atmosphere. Although..." | the same | "...interacts with the gases and particles in Earth's atmosphere. Although..." | as eedfcfa |
+
+(`serve` logs no round count; rounds are tokens - 1 - kept, which is `chat`'s count of steps where both print.)
+
+- Hypothesis 1, the fix: yes, and only by the tokens. The fix changes every stream's bits, the greedy reply to
+  `sky` leaves the old one at about token 21 (spec 014, fourth part: it is TensorFold's decode path's reply
+  whole since the fix, and was its engine's before), and the new 64 tokens happen to draft worse: 23 rounds
+  where there were 20 (`serve`) or 21 (`chat`), 40 drafts kept where there were 43 or 42. A round costs what
+  it did: 0.94 s over 20 rounds is 47 ms, 1.04 s over 23 is 45 ms. Fifteen percent more rounds of slightly
+  narrower windows is the tenth. `fmaf` costs nothing measurable: serial decoding is 33.3 to 33.6 tok/s at all
+  four commits, and the replies whose text did not change (Fibonacci, `primes`) decode at the same speed on
+  either side of the fix. The longer `sky` reply changed too and is no slower (55.7 to 56.4 either side).
+- Hypothesis 2, another measurement: no. Same prompt, body, token count and log line; see above.
+- Hypothesis 3, a loaded machine: no for the tenth. With the machine held alone, 68d459b gives spec 014's
+  figures again and eedfcfa gives the worker's (57.9 to 62.6 for later replies, 56.1 to 56.6 for `chat`).
+- Hypothesis 4, something else merged: no. 68d459b to 20f024a changes `compare.zig` alone; eedfcfa to 9174158
+  changes no file under `src` or `kernels`; and main before spec 020 (spec 017's masks in `draft.zig` and
+  `session.zig`) decodes as eedfcfa does.
+
+What follows from it. "67.6 to 69.9" is not a speed the pack lost: it is the speed of 64 particular tokens,
+and one prompt is a narrow base for a figure in a README. On the three other replies the pack decodes as it
+did. The comparison with TensorFold's 70.1 to 71.4 (22 rounds, 41 of 67) no longer compares the same reply:
+that figure is TensorFold's engine on the text zspark decoded before the fix (inferred from spec 014's record
+that the old reply was the engine's token for token; TensorFold was not run here).
+
+**Finding B: `serve`'s 15 is a struct field's default, not a decision; one default of 6 for both is what the
+numbers support.**
+
+Where the two numbers come from. `chat --depth` (default `draft_depth` 6) arrived with the MTP head in b0d568a
+(spec 005, which names TensorFold's `DEPTH` 6 and `CONFIDENCE` 0.7 as the rule being ported). 2dea901 (spec
+007's session) added `ReplyOptions.depth` with the default `draft.forward_max_rows - 1`, documented as "the
+head's and the window's own limits apply too", that is, as no limit; `chat` passes its option and
+`Chat.reply`, the server's backend, passes none, so a request drafts to 15. No spec of 005 to 008 records a
+choice of 15 for `serve`, no commit message mentions it, and `README.md` says "up to six". TensorFold serves
+`qwen4_exp` with `DEPTH = 6` (`families/qwen4_exp/cuda/__init__.py`; `MAX_DEPTH = 15` is the window's limit in
+`engine.py`), changed only by `--mtp-drafts N`; it does not adapt it: `mtp_decode` asks for `min(depth, tokens
+left)` each round and a chain stops before a draft under 0.7, as zspark's does.
+
+Measured: `zspark chat --no-thinking --temperature 0 --depth D`, on the spec 020 branch's binary (the code of
+main today: the graphs are captured at load, so a first reply captures none and depth does not change what a
+reply captures), three loads a cell on the pack and two on NVFP4, tok/s with steps and drafts kept of drafted.
+The replies' text is the same at every depth.
+
+| EXL3 pack | depth 3 | depth 6 | depth 10 | depth 15 |
+| --- | --- | --- | --- | --- |
+| `sky`, 64 tokens | 64.1 to 64.5 (24, 39 of 51) | 61.7 to 62.0 (23, 40 of 63) | 61.3 to 61.7 (23, 40 of 62) | 61.6 to 62.0 (23, 40 of 62) |
+| `primes`, 14 tokens to its end | 70.9 to 74.7 (4, 10 of 12) | 111.3 to 119.9 (2, 12 of 12) | 94.7 to 96.9 (2, 12 of 18) | 87.4 to 87.8 (2, 12 of 23) |
+| `sky` to its end, 122 tokens | 57.4 to 58.1 (51, 71 of 102) | 56.2 to 56.8 (49, 73 of 122) | 55.7 to 56.4 (49, 73 of 124) | 56.0 to 56.2 (49, 73 of 124) |
+| Fibonacci, 204 tokens | 72.6 to 73.7 (63, 141 of 168) | 87.4 to 88.4 (44, 160 of 198) | 87.5 to 88.9 (41, 163 of 219) | 86.2 to 87.3 (40, 164 of 235) |
+| graphs at load, ms capturing | 56, 73 to 84 | 62, 108 to 127 | 70, 149 to 180 | 80, 203 to 238 |
+
+| NVFP4 | depth 3 | depth 6 | depth 10 | depth 15 |
+| --- | --- | --- | --- | --- |
+| `sky`, 64 tokens | 39.7 (25, 38 of 50) | 38.2 to 38.3 (24, 39 of 70) | 37.7 to 37.8 (24, 39 of 74) | 37.5 to 37.7 (24, 39 of 75) |
+| `primes`, 14 tokens to its end | 49.2 to 49.4 (4, 10 of 12) | 81.8 to 81.9 (2, 12 of 12) | 69.3 to 72.9 (2, 12 of 16) | 69.5 to 73.1 (2, 12 of 16) |
+| `sky` to its end, 115 tokens | 36.1 to 36.3 (49, 66 of 101) | 36.6 (45, 70 of 129) | 36.1 to 36.2 (45, 70 of 133) | 36.1 (45, 70 of 134) |
+| Fibonacci, 214 tokens | 54.0 (57, 157 of 168) | 71.9 to 72.0 (36, 178 of 194) | 74.2 to 74.5 (30, 184 of 232) | 77.1 to 77.5 (26, 188 of 252) |
+| graphs at load, ms capturing | 56, 39 to 43 | 62, 64 to 70 | 70, 99 to 110 | 80, 141 to 156 |
+
+Reading it. Past 6 the confidence rule already ends most chains, so 10 and 15 keep the same drafts on prose
+(40 of 62 against 40 of 63) and cost a little for the wider windows they sometimes verify. They help only
+where the head is sure for long runs: code on NVFP4, 3% at 10 and 7% at 15, and nothing on the pack, where a
+serial step is cheap beside a wide window. They cost most on a short reply: a chain that runs past the reply's
+end is verified for nothing (12 of 23), 21 to 27% on the pack and 11 to 15% on NVFP4 for `primes`. Depth 3 is
+3 to 4% faster on `sky` at 64 tokens and loses 17 to 40% wherever the head is right for longer.
+
+Recommendation, for the owner to take or not: one default, 6, for `chat`, `generate` and `serve`. It is
+TensorFold's, it is what `README.md` says, and it is the only depth of the four that is never far from the
+best: best or level in four of the eight cells, 2 to 4% under depth 3 in three (prose) and 7% under depth 15
+in one (code on NVFP4), where 3 loses up to 40% and 15 up to 27% elsewhere. `serve` then captures 62 graphs
+at load instead of 80 (80 to 100 ms and, at the worker's 2 MiB a graph, some 35 MiB less). A `serve --depth N`
+option would give the 7% back to whoever serves code; `serve` has no such option today. The change itself is one line
+(`ReplyOptions.depth`'s default, or `Chat.reply` passing a session-wide depth), and `Session.prepare`'s call
+in `serve` reads the same default, so the graphs follow. Not changed here.
+
+Not run: the hybrid checkpoint at any depth; sampled replies (all of the above is greedy); depths between the
+four; NVFP4 with three loads a cell (two, their spread 0.4 tok/s at most but for `primes` at 10 and 15);
+TensorFold itself. The scratch worktrees (`68d459b`, `20f024a`, `eedfcfa`, `1141606`, the spec 020 branch) are
+removed.
+
+### 2026-10-05, the speed table retaken with the machine held alone, and criterion 2 on NVFP4 (Claude subagent, branch `investigate-serve-speed`)
+
+Written by the subagent. **This entry replaces every tok/s and load time of WS-01's entry**; its graph counts,
+device memory, md5s, tests and mutations stand, and the counts and memory came out the same here. spark-a,
+main at e9ef116 (WS-01 merged), one `-Doptimize=fast` binary built beforehand. "Before" is `--lazy-graphs`
+(`generate ... lazy`) on that binary, "after" its default. Every run is
+`flock -x ~/.cache/zspark/machine.lock flock ~/.cache/zspark/gpu.lock <one load>`, a `serve` held from its start
+to its last request, `uptime` written beside each. The worker's prompts, bodies, token counts and orders: three
+loads a `chat` or `generate` cell; six servers a `serve` column, three asking `sky` three times then `primes`
+three times and three the other way round, 64 tokens, greedy, the server's log line. The 1-minute load average
+beside the runs was 2.9 to 4.8 on the pack and 3.3 to 8.6 on NVFP4, which with the lock held is the previous
+load's reader threads decaying.
+
+| | EXL3 pack, before | EXL3 pack, after | NVFP4, before | NVFP4, after |
+| --- | --- | --- | --- | --- |
+| Graphs captured at load, `chat` / `serve` | 0 / 0 | 62 / 80 | 0 / 0 | 62 / 80 |
+| Time capturing them, `chat` / `serve` | | 106 to 125 ms / 206 to 225 ms | | 65 to 73 ms / 155 to 187 ms |
+| Graphs captured by the first reply, `chat` `sky` / `primes` | 24 in 67 to 73 ms / 8 in 15 to 17 ms | 0 / 0 | 24 in 41 to 49 ms / 8 in 10 ms | 0 / 0 |
+| Load, `chat` | 10.7 to 10.9 s | 10.8 to 11.1 s | 21.0 to 21.3 s | 21.2 to 21.6 s |
+| Load, `chat --serial` | 9.2 to 9.4 s | 9.3 to 9.4 s | 19.9 to 20.2 s | 20.0 s |
+| Load, `serve` | 10.5 to 10.9 s | 10.9 to 11.0 s | 21.0 to 21.2 s | 21.1 to 21.3 s |
+| Device, `chat` `sky`, peak (`nvidia-smi`) | 58,259 to 58,263 MiB | 58,290 MiB | 82,990 MiB | 83,018 MiB |
+| Device, `chat --serial` | 56,509 MiB | 56,509 MiB | 80,853 MiB | 80,853 MiB |
+| Device, `serve` after load / after six replies | 58,235 / 58,664 MiB | 58,412 / 58,744 MiB | 82,985 / 83,388 MiB | 83,117 / 83,449 MiB |
+| `sky` 64 tokens, `chat` (a first reply) | 57.2 to 57.6 tok/s | 61.2 to 62.0 | 37.0 to 37.2 | 37.1 to 38.0 |
+| `sky`, `serve`, the server's first reply (3) | 56.3 to 56.7 | 61.4 to 62.1 | 36.2 to 36.3 | 37.5 to 37.6 |
+| `sky`, `serve`, first after `primes`' replies (3) | 56.8 to 57.7 | 61.4 to 62.2 | 36.0 to 36.2 | 36.7 to 37.4 |
+| `sky`, `serve`, later replies (12) | 60.4 to 62.4, median 61.2 | 61.6 to 62.4, median 62.0 | 37.5 to 38.4, median 37.9 | 37.3 to 38.3, median 38.1 |
+| `primes` to its end token (14), `chat` | 99.3 to 105.4 | 117.9 to 119.0 | 74.2 to 77.4 | 80.5 to 81.0 |
+| `primes`, `serve`, the server's first reply (3) | 77.2 to 79.5 | 86.9 to 87.4 | 67.9 to 68.6 | 72.2 to 72.9 |
+| `primes`, `serve`, first after `sky`'s replies (3) | 83.8 to 84.6 | 86.5 to 88.1 | 61.6 to 68.2 | 69.3 to 73.6 |
+| `primes`, `serve`, later replies (12) | 79.2 to 88.3, median 85.9 | 82.6 to 88.5, median 87.9 | 68.6 to 74.2, median 72.6 | 68.5 to 74.1, median 73.9 |
+| `generate` `sky` 64 / `primes` 32 | 56.3 to 57.5 / 62.6 to 63.0 | 61.1 to 61.9 / 66.6 to 68.3 | 36.6 / 48.9 to 49.9 | 37.3 to 37.4 / 51.2 to 51.9 |
+| `sky` serial, `chat --serial` | 33.2 to 33.3 | 33.5 to 33.7 | 19.2 to 19.3 | 19.3 |
+
+Steps and drafts are the same before and after in every cell: `sky` 23 steps and 40 of 63 kept in `chat` on
+the pack (40 of 62 in `serve`), 24 steps and 39 of 70 on NVFP4 (39 of 75 in `serve`); `primes` 12 kept of 12
+in `chat`, of 23 (pack) or 16 (NVFP4) in `serve`. `generate`'s windows that captured took 0.54 s (pack) and
+0.62 s (NVFP4) of the `sky` reply before, 0.00 s after.
+
+**Criterion 2, from these numbers** (reported, not ticked).
+
+- EXL3 pack: met as measured. The server's first `sky` reply is 61.4 to 62.1 tok/s and a later one 61.6 to
+  62.4; `primes` 86.9 to 87.4 against 82.6 to 88.5; `chat`'s first reply 61.2 to 62.0. Before, the first was
+  56.3 to 56.7 against 60.4 to 62.4.
+- NVFP4: the first reply is still under the later ones, by 1 to 2%. The server's first `sky` reply is 37.5,
+  37.5 and 37.6 tok/s where the two that follow it in the same three servers are 38.0 to 38.3: 0.5 to 0.7
+  tok/s, 1.3 to 1.8%, about 25 ms of 1.7 s. The ranges touch only because one of the six servers ran slow
+  throughout (its later `sky` replies 37.3 and 37.7, its first 36.7). `primes`: 72.2 to 72.9 first against a
+  later median of 73.9 (eleven of the twelve later replies are 73.5 to 74.1, one is 68.5), about 4 ms of
+  190. It is not a cost of the server's first reply: `sky` asked first after three `primes` replies is as slow
+  (36.7 to 37.4), and so is `primes` after `sky` (69.3, 70.0, 73.6). It is a cost of a text's first decoding
+  in a process.
+
+**What the remainder is: the n-gram rows read from the disk, because the NVFP4 load drops them from the page
+cache.** Measured on a scratch binary (main with timers around each round's head, window, host stage, launch
+call and `ple.Table.gather`'s two loops, and `/proc/PID/io` read after each reply; never committed), one
+server a load, `sky`, `sky`, `primes`, `primes`, Fibonacci, Fibonacci at 64 tokens, machine held alone:
+
+| NVFP4, `serve` | as main (3 servers) | the table left out of the load's hold (3 servers) |
+| --- | --- | --- |
+| Load, bytes read from the disk by it | 21.1 to 21.2 s, 131.7 GB | 15.9 to 16.2 s, 80.5 GB |
+| First `sky`: tok/s, host stage, bytes read | 37.5 to 37.8, 23.3 to 24.8 ms, 8.05 MB | 38.1 to 38.5, 3.3 to 3.7 ms, 0 |
+| Second `sky` | 38.1 to 38.2, 1.9 to 2.0 ms, 0 | 38.2 to 38.5, 1.9 to 2.0 ms, 0 |
+| First `primes` | 64.2 to 69.7, 11.0 to 20.3 ms, 1.85 MB | 73.3 to 74.4, 0.6 to 0.7 ms, 0 |
+| Second `primes` | 74.0 to 74.2, 0.4 ms, 0 | 73.8 to 74.5, 0.4 ms, 0 |
+| First Fibonacci | 66.1 to 66.9, 46.0 to 47.3 ms, 5.58 MB | 70.1 to 70.6, 2.6 to 2.8 ms, 0 |
+| Second Fibonacci | 69.5 to 70.3, 1.6 to 1.7 ms, 0 | 69.7 to 70.5, 1.6 to 1.8 ms, 0 |
+
+- Where the time is. The head's time is the same in a first and a second reply (198 to 200 ms for `sky`), and
+  so is the window's time outside the host stage. The stage (`Graphs` staging a window's ids and the rows
+  `ple.Table.gather` copies out of the mapped table) is 23 to 25 ms in the first `sky` reply and 2 ms in the
+  second; of it the copy loop is 18 to 20 ms against 0.7, the `WILLNEED` loop 4 against 1. The first reply
+  takes about 1,510 minor faults and no major one, and the process reads 8.05 MB from the block device during
+  it; a second reply reads nothing and faults nowhere.
+- Why NVFP4 and not the pack. `Model.load` leaves an EXL3 table out of the layer's `hold`
+  (`src/flash_next/model.zig`, "its 30 GiB are not what a layer's load holds") but not a bf16 or FP8 one. So
+  the NVFP4 load reads the table's 51 GB with `O_DIRECT`, uploads none of it (the rows stay behind the
+  mapping), and `Checkpoint.hold` ends with `fadvise(DONTNEED)` on the span, which empties the page cache of
+  the rows earlier processes had read: `fincore` counts 13,247 cached pages of the checkpoint after each load
+  and 17,027 after the six replies. On the pack the count is 92,811 before and after, the six replies read 0
+  bytes, and the first `sky` reply's stage is 3.1 ms against 1.4.
+- The check. With the table left out of the hold (one scratch line, an environment switch on the same
+  binary), three servers in a row between servers loaded main's way: the first replies read 0 bytes, their stage
+  falls to 3.3 to 3.7 ms, and the first `sky` reply is 38.1 to 38.5 tok/s where the second is 38.2 to 38.5.
+  What is left of a first reply then is 1.5 ms of minor faults and 5 ms in the graphs' first launches (launch
+  calls sum to 4.6 to 5.8 ms in a first reply, 0.2 in a second, on either binary), 0.4% of the `sky` reply.
+  The same replies came out (tokens, drafts kept and drafted); the tests were not run on that line.
+- What it does not show. The rows were in the cache because earlier servers had asked the same prompts. A row
+  no process has read since the boot, or one the kernel has evicted, is read from the disk in any case
+  (about 5 KB and 13 microseconds a row here: 1,584 rows, 8.05 MB, 21 ms). A prompt never seen before costs
+  that on either checkpoint, graphs or no graphs; the hold makes NVFP4 pay it after every load.
+- Not the cause, each ruled out by the same runs: a graph left to capture (none is, `chat` prints 0), the
+  tokenizer or the HTTP path's first use (the cost returns with each new text in a warm server and is absent
+  from a repeated one), a lazy initialisation in a library (the head and the kernels take the same time).
+
+Side finding, for the owner: the NVFP4 load spends 5 s of its 21 and 51 GB of reads on a table it does not
+upload. Leaving it out of the hold, as the pack's is, is one line in `Model.load`; it is a load-time change
+with a consequence for the page cache, so it is not made here.
+
+Not run: the hybrid checkpoint; a machine freshly booted (every row cold); a prompt whose rows no earlier
+process had read, without the hold; the gated tests on the scratch line. The scratch worktrees of this entry
+(main, and main with the timers) are removed.
+
+### 2026-10-05 — coordinator: the n-gram table left out of a layer's hold on every checkpoint
+
+The investigation's finding, made: `Model.load` kept an NVFP4 or hybrid layer's n-gram shards in the layer's hold
+(only the pack's were left out), so the load read the 51 GB table from the disk, uploaded none of it, and its
+release dropped from the page cache the rows a reply gathers next. The scheme test is gone
+(`src/flash_next/model.zig`). `zspark chat DIR --max-tokens 64` on spark-a, `-Doptimize=fast`, main 5f885d7
+against the change, three loads each, interleaved, each load with `machine.lock` held whole (1-minute load
+average 0.9 to 7.1 beside them, the previous load's reader threads):
+
+| | NVFP4 before | NVFP4 after | hybrid before | hybrid after |
+| --- | --- | --- | --- | --- |
+| Loaded in | 21.2, 21.2, 21.3 s | 16.0, 16.2, 16.0 s | 21.1, 21.0, 21.2 s | 16.0, 16.1, 15.9 s |
+| Wall, the whole command | 24.95 to 25.14 s | 19.77 to 20.01 s | 24.37 to 24.54 s | 19.17 to 19.40 s |
+| Host MaxRSS | 54.76 GB | 8.56 GB | 54.76 GB | 8.58 GB |
+
+Gated runs on the change: NVFP4 and the hybrid 238 passed, 6 skipped of 244; the EXL3 pack 226 passed, 18 skipped
+of 244. No test names the hold: what is checked is that every comparison and reply stands with the table read
+through the mapping alone, as the pack's always was.
+
+### 2026-10-05 — coordinator: `serve` drafts six deep; criterion 2 judged; the spec closed
+
+The owner decided the investigation's finding B: one default depth of 6 (`session.default_depth`), `serve
+--depth N` for another, 62 graphs prepared at load by either command. The session tests that named no depth ask
+for the deepest window (15) explicitly. A test holds the default; with the struct's old default it fails
+("expected 6, found 15").
+
+Gated runs with both changes (the table out of the hold, the depth): NVFP4 and the hybrid 239 passed, 6 skipped
+of 245; the EXL3 pack 227 passed, 18 skipped of 245.
+
+`zspark serve` at b8884a3, `-Doptimize=fast`, spark-a, each server with `machine.lock` held whole (1-minute load
+average 1.7 to 4.5 beside them), three servers a row, three requests a prompt in the order given, 64 tokens at
+most, greedy, thinking off. tok/s as the server logs it; a prompt's first request in a server, then its two
+later ones.
+
+| | Load, graphs | `sky` first | `sky` later | `primes` first | `primes` later | Fibonacci first | Fibonacci later |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NVFP4, `sky primes fib` | 16.1 to 16.3 s, 62 in 68 to 71 ms | 38.0, 39.1, 38.9 | 38.9 to 39.2 | 83.5, 83.3, 83.7 | 78.9 to 84.0 | 62.2, 64.0, 63.5 | 63.5 to 64.2 |
+| NVFP4, `primes sky` | 15.9 to 16.2 s, 62 in 67 to 70 ms | 38.9, 39.1, 39.2 | 38.9 to 39.1 | 83.3, 83.0, 82.7 | 83.0 to 84.0 | | |
+| EXL3 pack, `sky primes fib` | 10.9 to 11.0 s, 62 in 118 ms | 62.7, 62.0, 61.8 | 62.1 to 62.9 | 121.5, 121.7, 120.2 | 115.4 to 122.1 | 75.2, 73.9, 75.0 | 74.3 to 75.2 |
+
+Drafts kept: `sky` 39 of 70 (NVFP4) and 40 of 63 (pack), `primes` 12 of 12, Fibonacci 50 of 61 and 45 of 62.
+
+Criterion 2 is met. On the pack a first reply is inside the later ones' spread. On NVFP4 it is in eight of the
+nine first replies; the ninth is the first server after the gated runs (38.0 against 38.9 to 39.2, and its first
+Fibonacci 62.2 against 63.5 to 64.2), which is rows read from the disk that the test runs had pushed out of the
+page cache, not a graph: the next two servers' first replies are level. A row not in the page cache costs a read
+on either checkpoint, whatever the graphs.
+
+Against the retake at depth 15 (the entry above), `serve` at depth 6 gives `primes` 83 tok/s where it gave 68 to
+74 on NVFP4 and 120 where it gave 83 to 88 on the pack; `sky` 39 against 37.3 to 38.3, and 62 against 61.6 to
+62.4.
+
+## Completion summary
+
+Completed 2026-10-05. `chat`, `serve` and drafted `generate` capture the graphs a reply uses while the model
+loads (`Session.prepare`: 62 at the default depth, in 0.07 to 0.12 s and about 30 MiB), so a first reply captures
+none and decodes at a later reply's speed on the EXL3 pack and on NVFP4; no reply's tokens changed.
+`--lazy-graphs` leaves them to the step that needs one, and sequences past 8192 tokens capture as they go.
+
+What it found beside its goal, and put right: `serve` drafted to depth 15 by an unintended default and now
+drafts to 6 as `chat` does (`--depth N`); an NVFP4 load read the 51 GB n-gram table it never uploads, and its
+release dropped the rows from the page cache: loads are 16 s where they were 21 s and the host's peak 8.6 GB
+where it was 55 GB. What it found and left: the EXL3 pack's `sky` reply decodes at 62 tok/s where spec 014
+recorded 68 to 70 because the write-back fix (`eedfcfa`) changed that reply's text to one the head drafts
+worse, not because anything slowed; TensorFold's 70.1 to 71.4 was on the earlier text and was not retaken.
+
+The speeds in WS-01's first entry are void (taken beside other work); the retake and this last table stand.
+Not done: the hybrid checkpoint and sampled replies were not timed, no prompt past 8192 tokens was run, and no
+automated test runs the server on a loaded model.

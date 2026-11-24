@@ -1,0 +1,18 @@
+repository: https://github.com/mackron/dr_libs
+commit: e381981afa52800b9a3864df548353ff67252fbc (master, 2026-11-20)
+version: dr_wav v0.14.7, dr_flac v0.13.5, dr_mp3 v0.7.5, each "TBD"/"UNRELEASED" at this commit
+license: public domain (the Unlicense) or MIT No Attribution, the user's choice (LICENSE, and the end of each
+header); dr_mp3 is based on minimp3 (CC0)
+imported: 2026-11-21 (spec 175 WS-02), by `tools/vendor_c.sh --stage dr_libs DIR` from a clone's export; before it
+  f12e197fd462e4c22873fbd70d11b1d2f2c1dc3c (2026-11-11), 2026-11-12 (spec 167 WS-01),
+  bad753d5ade4f30e40fcf80a757210b650681f8f (2026-10-25, spec 138 WS-02)
+files: 4 (1,104,449 bytes), listed with their sha256 in MANIFEST.sha256
+
+Master includes fixes since wav-0.14.6, flac-0.13.4 and mp3-0.7.4 that affect uploaded audio. This import
+bounds WAV data by the available bytes, avoids signed shifts in FLAC's endian conversions, and updates MP3
+frame matching and stereo scratch initialization. Earlier imports fixed dr_mp3's APE, Lyrics3v2 and Xing/Info
+parsing, dr_wav's metadata parsing and integer overflows, and division and shift errors in dr_flac.
+
+What was taken: dr_wav.h, dr_flac.h, dr_mp3.h and LICENSE. zspark's translation unit that defines the
+implementations and their options is zig/src/audio/dr_libs.c, not here: decoding from memory to f32, without
+stdio. Not taken: dr_libs' tests, CMake files and the other headers.

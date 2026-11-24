@@ -1,0 +1,48 @@
+{#- zspark's chat template for Unlimited-OCR-2, whose checkpoint has none (`requests.zig`; spec 147 WS-06): v1's
+    (`chat_template.jinja`: BOS, the system message, each message's content, a message's text parts joined by a
+    newline) with the page prompt of the checkpoint's own `infer` (`modeling_unlimitedocr.py`) for a message
+    with image parts: its text, or "Multi page parsing." where it has none; with no `<image>` in it,
+    `<PAGE><image>` for each image before it; one `<image>` among several images, `<PAGE><image>` for each in its
+    place; as many `<image>` as images, the text as it stands (SGLang's v2 README request writes
+    `<PAGE><image>` a page itself); any other count refused, as `infer` raises. In such a message the client's
+    `<image>` and `<PAGE>` are written again by the template (`replace`, its literal the template's), so that
+    they are the image's placeholder and the page marker, as SGLang and the HF code read them (TensorFold 1.1.4
+    masks a request's bytes, #1117); in a message with no image part they stay the client's text. -#}
+{%- if messages[0]['role'] == 'system' -%}
+    {%- set system_message = messages[0]['content'] -%}
+    {%- set messages = messages[1:] -%}
+{%- else -%}
+    {%- set system_message = '' -%}
+{%- endif -%}
+{{- bos_token + system_message -}}
+{%- for message in messages -%}
+    {%- if message['content'] is string -%}
+        {{- message['content'] -}}
+    {%- else -%}
+        {%- set ns = namespace(text='', any=false, images=0, pages='') -%}
+        {%- for part in message['content'] -%}
+            {%- if part['type'] == 'text' -%}
+                {%- set ns.text = ns.text + ('\n' if ns.any else '') + part['text'] -%}
+                {%- set ns.any = true -%}
+            {%- else -%}
+                {%- set ns.images = ns.images + 1 -%}
+                {%- set ns.pages = ns.pages + '<PAGE><image>' -%}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if ns.images == 0 -%}
+            {{- ns.text -}}
+        {%- else -%}
+            {%- set text = (ns.text if ns.text else 'Multi page parsing.').replace('<PAGE>', '<PAGE>') -%}
+            {%- set marks = text.count('<image>') -%}
+            {%- if marks == 0 -%}
+                {{- ns.pages + text -}}
+            {%- elif ns.images > 1 and marks == 1 -%}
+                {{- text.replace('<image>', ns.pages) -}}
+            {%- elif marks == ns.images -%}
+                {{- text.replace('<image>', '<image>') -}}
+            {%- else -%}
+                {{- raise_exception('the prompt has ' ~ marks ~ ' <image> placeholders but ' ~ ns.images ~ ' images') -}}
+            {%- endif -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor -%}

@@ -1,0 +1,56 @@
+{
+  "comment": "The requests of tools/reference/client_bench.py (spec 024): what a client sends to `zspark serve` and to TensorFold's server alike. Edit it and both servers must be measured again.",
+  "corpus": [
+    "tools/reference/client_bench_corpus.txt"
+  ],
+  "chars_per_token": 2.9,
+  "warm": {"user": "Write three sentences about the sea.", "max_tokens": 32},
+  "decode_repeats": 2,
+  "decode": [
+    {"name": "prose-short", "max_tokens": 64,
+     "user": "Explain in plain words why the sky is blue during the day and red at sunset."},
+    {"name": "prose-long", "max_tokens": 512,
+     "user": "Write an essay of about four hundred words on how the printing press changed Europe: who could read, what was printed first, and what it did to the authority of the church and of kings."},
+    {"name": "code-short", "max_tokens": 64,
+     "user": "Write a Python function that returns the n-th Fibonacci number iteratively. Code only, no explanation."},
+    {"name": "code-long", "max_tokens": 512,
+     "user": "Write a complete Python module that implements an LRU cache class with get, put and delete, backed by a dict and a doubly linked list, with type hints, docstrings and a small unittest suite. Code only."},
+    {"name": "tool-call", "max_tokens": 256, "tools": true,
+     "user": "What's the weather in Paris for the next 3 days, in celsius? Use the tool."},
+    {"name": "thinking", "max_tokens": 512, "thinking": true,
+     "user": "A train leaves at 9:40 and travels 150 km at 60 km/h, waits 25 minutes, then travels 80 km at 100 km/h. When does it arrive? Think it through, then give the time."},
+    {"name": "prose-long-sampled", "max_tokens": 512, "temperature": 0.7, "top_p": 0.8, "top_k": 20, "seed": 7,
+     "user": "Write an essay of about four hundred words on how the printing press changed Europe: who could read, what was printed first, and what it did to the authority of the church and of kings."},
+    {"name": "code-long-sampled", "max_tokens": 512, "temperature": 0.7, "top_p": 0.8, "top_k": 20, "seed": 7,
+     "user": "Write a complete Python module that implements an LRU cache class with get, put and delete, backed by a dict and a doubly linked list, with type hints, docstrings and a small unittest suite. Code only."}
+  ],
+  "tools": [
+    {"type": "function", "function": {"name": "get_weather", "description": "Current weather for a city",
+      "parameters": {"type": "object", "properties": {"city": {"type": "string"}, "days": {"type": "integer"},
+        "units": {"type": "string", "enum": ["c", "f"]}}, "required": ["city"]}}}
+  ],
+  "prompt_sizes": [50, 500, 4000, 16000],
+  "prompt_repeats": 2,
+  "prompt": {
+    "max_tokens": 16,
+    "lead": "Below is an excerpt of an engineering log. Read it, then answer the question after it.\n\n",
+    "question": "\n\nQuestion: in one sentence, what is the excerpt about?",
+    "second": "Now name one number that appears in the excerpt and say what it measures.",
+    "edited": "Now name one file that the excerpt mentions and say what it holds."
+  },
+  "turns_comment": "Spec 030: conversations whose replies are some hundreds of tokens, sent after every request above, so those are the bytes they were. `thinking` sends each reply's reasoning back as `reasoning_content`.",
+  "turns_repeats": 2,
+  "turns": [
+    {"name": "turns-500", "size": 500, "thinking": false, "reply_tokens": 320},
+    {"name": "turns-4000", "size": 4000, "thinking": false, "reply_tokens": 320},
+    {"name": "turns-think-500", "size": 500, "thinking": true, "reply_tokens": 640}
+  ],
+  "turn": {
+    "max_tokens": 16,
+    "question": "\n\nSummarize the excerpt in about two hundred words.",
+    "second": "Now list, in about two hundred words, the numbers the excerpt gives and what each one measures.",
+    "second_edited": "Now list, in about two hundred words, the files the excerpt names and what each one holds.",
+    "third": "Which of those matters most? Answer in one sentence.",
+    "third_edited": "Which of those matters least? Answer in one sentence."
+  }
+}

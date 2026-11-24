@@ -1,0 +1,6 @@
+#!/bin/sh
+# Install once per clone: git config core.hooksPath .githooks
+set -eu
+cache_root=$HOME/.cache/zspark
+mkdir -p "$cache_root"
+exec flock -s "$cache_root/machine.lock" flock -s "$cache_root/cache.lock" zig build check-specs

@@ -1,0 +1,7705 @@
+{
+ "messages": [
+  {
+   "name": "plain",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "plain",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "plain",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "plain",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "one_system",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "one_system",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "one_system",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "one_system",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "leading_merged",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "a"
+    },
+    {
+     "role": "developer",
+     "content": "b",
+     "name": "d"
+    },
+    {
+     "role": "system",
+     "content": "c"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\nb\n\nc"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "leading_merged",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "a"
+    },
+    {
+     "role": "developer",
+     "content": "b",
+     "name": "d"
+    },
+    {
+     "role": "system",
+     "content": "c"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\nb\n\nc"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "leading_merged",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "a"
+    },
+    {
+     "role": "developer",
+     "content": "b",
+     "name": "d"
+    },
+    {
+     "role": "system",
+     "content": "c"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\nb\n\nc"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "leading_merged",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "a"
+    },
+    {
+     "role": "developer",
+     "content": "b",
+     "name": "d"
+    },
+    {
+     "role": "system",
+     "content": "c"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\nb\n\nc"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "developer_first_keeps_its_keys",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "name": "d",
+     "role": "developer",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "name": "d",
+     "role": "system",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "developer_first_keeps_its_keys",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "name": "d",
+     "role": "developer",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "name": "d",
+     "role": "system",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "developer_first_keeps_its_keys",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "name": "d",
+     "role": "developer",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "name": "d",
+     "role": "system",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "developer_first_keeps_its_keys",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "name": "d",
+     "role": "developer",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "name": "d",
+     "role": "system",
+     "content": "b"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "late_system",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    },
+    {
+     "role": "developer",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "user",
+     "content": "later"
+    },
+    {
+     "role": "user",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "late_system",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    },
+    {
+     "role": "developer",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "user",
+     "content": "later"
+    },
+    {
+     "role": "user",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "late_system",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    },
+    {
+     "role": "developer",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    },
+    {
+     "role": "system",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "late_system",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    },
+    {
+     "role": "developer",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "a"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    },
+    {
+     "role": "system",
+     "content": "dev"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "only_system",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ]
+  },
+  {
+   "name": "only_system",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ]
+  },
+  {
+   "name": "only_system",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ]
+  },
+  {
+   "name": "only_system",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ]
+  },
+  {
+   "name": "system_after_user_only",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "user",
+     "content": "later"
+    }
+   ]
+  },
+  {
+   "name": "system_after_user_only",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "user",
+     "content": "later"
+    }
+   ]
+  },
+  {
+   "name": "system_after_user_only",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    }
+   ]
+  },
+  {
+   "name": "system_after_user_only",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "system",
+     "content": "later"
+    }
+   ]
+  },
+  {
+   "name": "text_parts_joined",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      },
+      {
+       "type": "text",
+       "text": "b"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "ab"
+    }
+   ]
+  },
+  {
+   "name": "text_parts_joined",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      },
+      {
+       "type": "text",
+       "text": "b"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "ab"
+    }
+   ]
+  },
+  {
+   "name": "text_parts_joined",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      },
+      {
+       "type": "text",
+       "text": "b"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "ab"
+    }
+   ]
+  },
+  {
+   "name": "text_parts_joined",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      },
+      {
+       "type": "text",
+       "text": "b"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "ab"
+    }
+   ]
+  },
+  {
+   "name": "empty_parts",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": ""
+    }
+   ]
+  },
+  {
+   "name": "empty_parts",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": ""
+    }
+   ]
+  },
+  {
+   "name": "empty_parts",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": ""
+    }
+   ]
+  },
+  {
+   "name": "empty_parts",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": ""
+    }
+   ]
+  },
+  {
+   "name": "system_parts_merged",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\n"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "system_parts_merged",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\n"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "system_parts_merged",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\n"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "system_parts_merged",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "a"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "a\n\n"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "null_content",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "null_content",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "null_content",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "null_content",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": null
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "missing_content",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "assistant"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "missing_content",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "assistant"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "missing_content",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "assistant"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "missing_content",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "assistant"
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "expected": [
+    {
+     "role": "assistant",
+     "content": ""
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ]
+  },
+  {
+   "name": "extra_keys_kept",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": null,
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "",
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "extra_keys_kept",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": null,
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "",
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "extra_keys_kept",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": null,
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "",
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "extra_keys_kept",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": null,
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "",
+     "name": "n",
+     "x": [
+      1,
+      {
+       "y": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "falsy_media_allowed",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ]
+  },
+  {
+   "name": "falsy_media_allowed",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ]
+  },
+  {
+   "name": "falsy_media_allowed",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ]
+  },
+  {
+   "name": "falsy_media_allowed",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi",
+     "image": null,
+     "images": [],
+     "audio": ""
+    }
+   ]
+  },
+  {
+   "name": "tool_result",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ]
+  },
+  {
+   "name": "tool_result",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ]
+  },
+  {
+   "name": "tool_result",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ]
+  },
+  {
+   "name": "tool_result",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": "42"
+    }
+   ]
+  },
+  {
+   "name": "arguments_string",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{\"a\": 1, \"b\": [true, null, 1.5, \"x\"]}"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1,
+         "b": [
+          true,
+          null,
+          1.5,
+          "x"
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{\"a\": 1, \"b\": [true, null, 1.5, \"x\"]}"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1,
+         "b": [
+          true,
+          null,
+          1.5,
+          "x"
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{\"a\": 1, \"b\": [true, null, 1.5, \"x\"]}"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1,
+         "b": [
+          true,
+          null,
+          1.5,
+          "x"
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{\"a\": 1, \"b\": [true, null, 1.5, \"x\"]}"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1,
+         "b": [
+          true,
+          null,
+          1.5,
+          "x"
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_spaced",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "  {\"a\": {\"b\": 2}} \n"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": {
+          "b": 2
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_spaced",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "  {\"a\": {\"b\": 2}} \n"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": {
+          "b": 2
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_spaced",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "  {\"a\": {\"b\": 2}} \n"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": {
+          "b": 2
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_spaced",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "  {\"a\": {\"b\": 2}} \n"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": {
+          "b": 2
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_invalid_json",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{not json"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "{not json"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_invalid_json",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{not json"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "{not json"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_invalid_json",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{not json"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "{not json"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_invalid_json",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "{not json"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "{not json"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_not_object",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "[1, 2]"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "[1, 2]"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_not_object",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "[1, 2]"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "[1, 2]"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_not_object",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "[1, 2]"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "[1, 2]"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_not_object",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "[1, 2]"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "[1, 2]"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_number",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "7"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "7"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_number",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "7"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "7"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_number",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "7"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "7"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_string_number",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": "7"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": "7"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_empty_string",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": ""
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": ""
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_empty_string",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": ""
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": ""
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_empty_string",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": ""
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": ""
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_empty_string",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": ""
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": ""
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_null",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": null
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": null
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_null",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": null
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": null
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_null",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": null
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": null
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_null",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": null
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": null
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_list",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": [
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": [
+          1
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_list",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": [
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": [
+          1
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_list",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": [
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": [
+          1
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_list",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": [
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": [
+          1
+         ]
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_number",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": 3
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": 3
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_number",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": 3
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": 3
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_number",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": 3
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": 3
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_number",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": 3
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {
+         "_invalid_arguments": 3
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_mapping_untouched",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_mapping_untouched",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_mapping_untouched",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_mapping_untouched",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_absent",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_absent",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_absent",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "arguments_absent",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_empty",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_empty",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_empty",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_empty",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": []
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_null",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_null",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_null",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ]
+  },
+  {
+   "name": "tool_calls_null",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "x",
+     "tool_calls": null
+    }
+   ]
+  },
+  {
+   "name": "call_not_object",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "call_not_object",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "call_not_object",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "call_not_object",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      "x",
+      {
+       "function": "y"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "two_calls_one_touched",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": "{\"b\": 2}",
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": {
+         "b": 2
+        },
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "two_calls_one_touched",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": "{\"b\": 2}",
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": {
+         "b": 2
+        },
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "two_calls_one_touched",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": "{\"b\": 2}",
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": {
+         "b": 2
+        },
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "two_calls_one_touched",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": "{\"b\": 2}",
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "function": {
+        "name": "f",
+        "arguments": {
+         "a": 1
+        }
+       }
+      },
+      {
+       "function": {
+        "arguments": {
+         "b": 2
+        },
+        "name": "g"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "unicode",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "你好"
+    },
+    {
+     "role": "system",
+     "content": "é"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "😀"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "你好\n\né"
+    },
+    {
+     "role": "user",
+     "content": "😀"
+    }
+   ]
+  },
+  {
+   "name": "unicode",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "你好"
+    },
+    {
+     "role": "system",
+     "content": "é"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "😀"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "你好\n\né"
+    },
+    {
+     "role": "user",
+     "content": "😀"
+    }
+   ]
+  },
+  {
+   "name": "unicode",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "你好"
+    },
+    {
+     "role": "system",
+     "content": "é"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "😀"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "你好\n\né"
+    },
+    {
+     "role": "user",
+     "content": "😀"
+    }
+   ]
+  },
+  {
+   "name": "unicode",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "你好"
+    },
+    {
+     "role": "system",
+     "content": "é"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "😀"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "你好\n\né"
+    },
+    {
+     "role": "user",
+     "content": "😀"
+    }
+   ]
+  },
+  {
+   "name": "image_parts",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "look"
+      },
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "data:x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_parts",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "look"
+      },
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "data:x"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "look"
+      },
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "data:x"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "image_parts",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "look"
+      },
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "data:x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_parts",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "look"
+      },
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "data:x"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "look"
+      },
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "data:x"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "image_only",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_only",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image",
+       "image": "x"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "image_only",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_only",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image",
+       "image": "x"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "video_part",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "video_url",
+       "video_url": {
+        "url": "x"
+       }
+      },
+      {
+       "type": "video"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "video_part",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "video_url",
+       "video_url": {
+        "url": "x"
+       }
+      },
+      {
+       "type": "video"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "video_url",
+       "video_url": {
+        "url": "x"
+       }
+      },
+      {
+       "type": "video"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "video_part",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "video_url",
+       "video_url": {
+        "url": "x"
+       }
+      },
+      {
+       "type": "video"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "video_part",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "video_url",
+       "video_url": {
+        "url": "x"
+       }
+      },
+      {
+       "type": "video"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "video_url",
+       "video_url": {
+        "url": "x"
+       }
+      },
+      {
+       "type": "video"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "tool_image",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "tool_image",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "tool_image",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "tool_image",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": "hi"
+    },
+    {
+     "role": "assistant",
+     "content": "",
+     "tool_calls": [
+      {
+       "id": "c1",
+       "type": "function",
+       "function": {
+        "name": "f",
+        "arguments": {}
+       }
+      }
+     ]
+    },
+    {
+     "role": "tool",
+     "tool_call_id": "c1",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "image_then_late_system",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "later"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_then_late_system",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "later"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": "later"
+    }
+   ]
+  },
+  {
+   "name": "image_then_late_system",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "later"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_then_late_system",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "text",
+       "text": "later"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "system",
+     "content": "s"
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": "later"
+    }
+   ]
+  },
+  {
+   "name": "image_in_first_message_then_system",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_in_first_message_then_system",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": "s"
+    }
+   ]
+  },
+  {
+   "name": "image_in_first_message_then_system",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_in_first_message_then_system",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "system",
+     "content": "s"
+    }
+   ]
+  },
+  {
+   "name": "image_part_with_media_key",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      },
+      {
+       "type": "image_url"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_part_with_media_key",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      },
+      {
+       "type": "image_url"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      },
+      {
+       "type": "image_url"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "image_part_with_media_key",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      },
+      {
+       "type": "image_url"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_part_with_media_key",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      },
+      {
+       "type": "image_url"
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      },
+      {
+       "type": "image_url"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "assistant_image",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "assistant_image",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "images and videos are supported only in user and tool messages"
+  },
+  {
+   "name": "assistant_image",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "assistant_image",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "images and videos are supported only in user and tool messages"
+  },
+  {
+   "name": "system_image",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "system_image",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "error": "images and videos are supported only in user and tool messages"
+  },
+  {
+   "name": "system_image",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "system_image",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "system",
+     "content": [
+      {
+       "type": "image"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": "hi"
+    }
+   ],
+   "error": "images and videos are supported only in user and tool messages"
+  },
+  {
+   "name": "image_with_audio_part",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "input_audio"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_audio_part",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "input_audio"
+      }
+     ]
+    }
+   ],
+   "error": "image messages may contain text and image_url (or video_url) parts only"
+  },
+  {
+   "name": "image_with_audio_part",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "input_audio"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_audio_part",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "input_audio"
+      }
+     ]
+    }
+   ],
+   "error": "image messages may contain text and image_url (or video_url) parts only"
+  },
+  {
+   "name": "image_with_bare_part",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_bare_part",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      "x"
+     ]
+    }
+   ],
+   "error": "image messages may contain text and image_url (or video_url) parts only"
+  },
+  {
+   "name": "image_with_bare_part",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_bare_part",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      "x"
+     ]
+    }
+   ],
+   "error": "image messages may contain text and image_url (or video_url) parts only"
+  },
+  {
+   "name": "image_with_bad_text",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "text",
+       "text": null
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_bad_text",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "text",
+       "text": null
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "image_with_bad_text",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "text",
+       "text": null
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_bad_text",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "type": "text",
+       "text": null
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "image_with_untyped_part",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "text": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_untyped_part",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "text": "x"
+      }
+     ]
+    }
+   ],
+   "error": "image messages may contain text and image_url (or video_url) parts only"
+  },
+  {
+   "name": "image_with_untyped_part",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "text": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_with_untyped_part",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      },
+      {
+       "text": "x"
+      }
+     ]
+    }
+   ],
+   "error": "image messages may contain text and image_url (or video_url) parts only"
+  },
+  {
+   "name": "image_message_media_key",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ],
+     "images": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_message_media_key",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ],
+     "images": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_message_media_key",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ],
+     "images": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_message_media_key",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image"
+      }
+     ],
+     "images": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "empty_list",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [],
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "empty_list",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [],
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "empty_list",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [],
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "empty_list",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [],
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "not_a_list",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": {
+    "role": "user"
+   },
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "not_a_list",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": {
+    "role": "user"
+   },
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "not_a_list",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": {
+    "role": "user"
+   },
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "not_a_list",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": {
+    "role": "user"
+   },
+   "error": "messages must be a non-empty list"
+  },
+  {
+   "name": "message_not_object",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    "hi"
+   ],
+   "error": "each message must be an object"
+  },
+  {
+   "name": "message_not_object",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    "hi"
+   ],
+   "error": "each message must be an object"
+  },
+  {
+   "name": "message_not_object",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    "hi"
+   ],
+   "error": "each message must be an object"
+  },
+  {
+   "name": "message_not_object",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    "hi"
+   ],
+   "error": "each message must be an object"
+  },
+  {
+   "name": "bad_role",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "function",
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "bad_role",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "function",
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "bad_role",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "function",
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "bad_role",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "function",
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "no_role",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "no_role",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "no_role",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "no_role",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "role_not_string",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": 3,
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "role_not_string",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": 3,
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "role_not_string",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": 3,
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "role_not_string",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": 3,
+     "content": "x"
+    }
+   ],
+   "error": "message role must be system, developer, user, assistant or tool"
+  },
+  {
+   "name": "media_key",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "x",
+     "image_url": "http://x"
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "media_key",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "x",
+     "image_url": "http://x"
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "media_key",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": "x",
+     "image_url": "http://x"
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "media_key",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": "x",
+     "image_url": "http://x"
+    }
+   ],
+   "error": "this server accepts text only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_part",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_part",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "image_part",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "image_part",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ],
+   "expected": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "image_url",
+       "image_url": {
+        "url": "x"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "part_not_object",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_not_object",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_not_object",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_not_object",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      "x"
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_with_media",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_with_media",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_with_media",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_with_media",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "a",
+       "image": "x"
+      }
+     ]
+    }
+   ],
+   "error": "this server accepts text parts only; image, audio and video inputs are unsupported"
+  },
+  {
+   "name": "part_text_not_string",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": 3
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "part_text_not_string",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": 3
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "part_text_not_string",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": 3
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "part_text_not_string",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": 3
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "part_text_missing",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text"
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "part_text_missing",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text"
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "part_text_missing",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text"
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "part_text_missing",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text"
+      }
+     ]
+    }
+   ],
+   "error": "a text content part must contain a text string"
+  },
+  {
+   "name": "content_number",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": 3
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_number",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": 3
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_number",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": 3
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_number",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": 3
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_object",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": {
+      "a": 1
+     }
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_object",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": {
+      "a": 1
+     }
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_object",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": {
+      "a": 1
+     }
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_object",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": {
+      "a": 1
+     }
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_bool",
+   "late_system": "user",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": false
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_bool",
+   "late_system": "user",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": false
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_bool",
+   "late_system": "system",
+   "allow_images": false,
+   "messages": [
+    {
+     "role": "user",
+     "content": false
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  },
+  {
+   "name": "content_bool",
+   "late_system": "system",
+   "allow_images": true,
+   "messages": [
+    {
+     "role": "user",
+     "content": false
+    }
+   ],
+   "error": "message content must be text or an array of text parts"
+  }
+ ],
+ "loads": [
+  {
+   "text": "{}",
+   "dumps": "{}"
+  },
+  {
+   "text": "[]",
+   "dumps": "[]"
+  },
+  {
+   "text": " \t\r\n{\"a\" : 1 , \"b\":[ ] }\n",
+   "dumps": "{\"a\": 1, \"b\": []}"
+  },
+  {
+   "text": "null",
+   "dumps": "null"
+  },
+  {
+   "text": "true",
+   "dumps": "true"
+  },
+  {
+   "text": "false",
+   "dumps": "false"
+  },
+  {
+   "text": "0",
+   "dumps": "0"
+  },
+  {
+   "text": "-0",
+   "dumps": "0"
+  },
+  {
+   "text": "7",
+   "dumps": "7"
+  },
+  {
+   "text": "-12",
+   "dumps": "-12"
+  },
+  {
+   "text": "9223372036854775807",
+   "dumps": "9223372036854775807"
+  },
+  {
+   "text": "0.5",
+   "dumps": "0.5"
+  },
+  {
+   "text": "-0.0",
+   "dumps": "-0.0"
+  },
+  {
+   "text": "1e5",
+   "dumps": "100000.0"
+  },
+  {
+   "text": "1E5",
+   "dumps": "100000.0"
+  },
+  {
+   "text": "1e+5",
+   "dumps": "100000.0"
+  },
+  {
+   "text": "1.5e-3",
+   "dumps": "0.0015"
+  },
+  {
+   "text": "1e22",
+   "dumps": "1e+22"
+  },
+  {
+   "text": "1e16",
+   "dumps": "1e+16"
+  },
+  {
+   "text": "123456789.125",
+   "dumps": "123456789.125"
+  },
+  {
+   "text": "1e999",
+   "dumps": "Infinity"
+  },
+  {
+   "text": "-1e999",
+   "dumps": "-Infinity"
+  },
+  {
+   "text": "1e-999",
+   "dumps": "0.0"
+  },
+  {
+   "text": "0.1",
+   "dumps": "0.1"
+  },
+  {
+   "text": "2.5e-5",
+   "dumps": "2.5e-05"
+  },
+  {
+   "text": "1e-7",
+   "dumps": "1e-07"
+  },
+  {
+   "text": "NaN",
+   "dumps": "NaN"
+  },
+  {
+   "text": "Infinity",
+   "dumps": "Infinity"
+  },
+  {
+   "text": "-Infinity",
+   "dumps": "-Infinity"
+  },
+  {
+   "text": "[NaN, Infinity, -Infinity]",
+   "dumps": "[NaN, Infinity, -Infinity]"
+  },
+  {
+   "text": "{\"a\": NaN}",
+   "dumps": "{\"a\": NaN}"
+  },
+  {
+   "text": "\"\"",
+   "dumps": "\"\""
+  },
+  {
+   "text": "\"a\\nb\\t\\\"\\\\\\/\\b\\f\\r\"",
+   "dumps": "\"a\\nb\\t\\\"\\\\/\\b\\f\\r\""
+  },
+  {
+   "text": "\"\\u00e9\\u4f60\"",
+   "dumps": "\"é你\""
+  },
+  {
+   "text": "\"\\ud83d\\ude00\"",
+   "dumps": "\"😀\""
+  },
+  {
+   "text": "\"你好 😀\"",
+   "dumps": "\"你好 😀\""
+  },
+  {
+   "text": "\"\\u0000\\u001f\\u007f\"",
+   "dumps": "\"\\u0000\\u001f\""
+  },
+  {
+   "text": "\"\\uABcd\"",
+   "dumps": "\"ꯍ\""
+  },
+  {
+   "text": "\"<>&'\"",
+   "dumps": "\"<>&'\""
+  },
+  {
+   "text": "{\"a\": 1, \"b\": 2, \"a\": 3}",
+   "dumps": "{\"a\": 3, \"b\": 2}"
+  },
+  {
+   "text": "{\"a\": {\"a\": [1, {\"b\": null}]}}",
+   "dumps": "{\"a\": {\"a\": [1, {\"b\": null}]}}"
+  },
+  {
+   "text": "{\"\": 0}",
+   "dumps": "{\"\": 0}"
+  },
+  {
+   "text": "[[[[[[1]]]]]]",
+   "dumps": "[[[[[[1]]]]]]"
+  },
+  {
+   "text": "{\"z\": 1, \"a\": 2}",
+   "dumps": "{\"z\": 1, \"a\": 2}"
+  },
+  {
+   "text": "[1,2,3]",
+   "dumps": "[1, 2, 3]"
+  },
+  {
+   "text": "[1 ,2 , 3 ]",
+   "dumps": "[1, 2, 3]"
+  },
+  {
+   "text": "{\"a\":\"b\"}",
+   "dumps": "{\"a\": \"b\"}"
+  },
+  {
+   "text": "",
+   "dumps": null
+  },
+  {
+   "text": " ",
+   "dumps": null
+  },
+  {
+   "text": "nul",
+   "dumps": null
+  },
+  {
+   "text": "True",
+   "dumps": null
+  },
+  {
+   "text": "None",
+   "dumps": null
+  },
+  {
+   "text": "nan",
+   "dumps": null
+  },
+  {
+   "text": "inf",
+   "dumps": null
+  },
+  {
+   "text": "-NaN",
+   "dumps": null
+  },
+  {
+   "text": "+1",
+   "dumps": null
+  },
+  {
+   "text": "+Infinity",
+   "dumps": null
+  },
+  {
+   "text": "Infinit",
+   "dumps": null
+  },
+  {
+   "text": "-",
+   "dumps": null
+  },
+  {
+   "text": "01",
+   "dumps": null
+  },
+  {
+   "text": "-01",
+   "dumps": null
+  },
+  {
+   "text": "1.",
+   "dumps": null
+  },
+  {
+   "text": ".5",
+   "dumps": null
+  },
+  {
+   "text": "1e",
+   "dumps": null
+  },
+  {
+   "text": "1e+",
+   "dumps": null
+  },
+  {
+   "text": "1.e5",
+   "dumps": null
+  },
+  {
+   "text": "0x10",
+   "dumps": null
+  },
+  {
+   "text": "1_000",
+   "dumps": null
+  },
+  {
+   "text": "--1",
+   "dumps": null
+  },
+  {
+   "text": "1 2",
+   "dumps": null
+  },
+  {
+   "text": "{} {}",
+   "dumps": null
+  },
+  {
+   "text": "[1,]",
+   "dumps": null
+  },
+  {
+   "text": "[,1]",
+   "dumps": null
+  },
+  {
+   "text": "[1 2]",
+   "dumps": null
+  },
+  {
+   "text": "[",
+   "dumps": null
+  },
+  {
+   "text": "]",
+   "dumps": null
+  },
+  {
+   "text": "{",
+   "dumps": null
+  },
+  {
+   "text": "}",
+   "dumps": null
+  },
+  {
+   "text": "{\"a\"}",
+   "dumps": null
+  },
+  {
+   "text": "{\"a\":}",
+   "dumps": null
+  },
+  {
+   "text": "{\"a\": 1,}",
+   "dumps": null
+  },
+  {
+   "text": "{a: 1}",
+   "dumps": null
+  },
+  {
+   "text": "{'a': 1}",
+   "dumps": null
+  },
+  {
+   "text": "{1: 2}",
+   "dumps": null
+  },
+  {
+   "text": "{\"a\" 1}",
+   "dumps": null
+  },
+  {
+   "text": "'a'",
+   "dumps": null
+  },
+  {
+   "text": "\"a",
+   "dumps": null
+  },
+  {
+   "text": "\"a\nb\"",
+   "dumps": null
+  },
+  {
+   "text": "\"a\tb\"",
+   "dumps": null
+  },
+  {
+   "text": "\"\\x41\"",
+   "dumps": null
+  },
+  {
+   "text": "\"\\u12\"",
+   "dumps": null
+  },
+  {
+   "text": "\"\\u12g4\"",
+   "dumps": null
+  },
+  {
+   "text": "\"\\",
+   "dumps": null
+  },
+  {
+   "text": "\"\\u+123\"",
+   "dumps": null
+  },
+  {
+   "text": "﻿{}",
+   "dumps": null
+  },
+  {
+   "text": "{}x",
+   "dumps": null
+  },
+  {
+   "text": "// c\n{}",
+   "dumps": null
+  },
+  {
+   "text": "[1] ,",
+   "dumps": null
+  },
+  {
+   "text": " {}",
+   "dumps": null
+  },
+  {
+   "text": "\u000b{}",
+   "dumps": null
+  }
+ ],
+ "levels": [
+  {
+   "name": "none",
+   "source": "{{ messages }}",
+   "levels": []
+  },
+  {
+   "name": "qwen_like",
+   "source": "{% if reasoning_effort == 'low' %}a{% elif reasoning_effort == \"medium\" %}b{% elif reasoning_effort == 'xhigh' %}c{% endif %}",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ]
+  },
+  {
+   "name": "glm_like",
+   "source": "{{ 'low' }}{{ 'high' }}{{ 'max' }}",
+   "levels": [
+    "high",
+    "low",
+    "max"
+   ]
+  },
+  {
+   "name": "mixed_quotes",
+   "source": "{{ 'minimal\" }}",
+   "levels": [
+    "minimal"
+   ]
+  },
+  {
+   "name": "unquoted",
+   "source": "low medium 'lower' 'highest' \"max \"",
+   "levels": []
+  },
+  {
+   "name": "all",
+   "source": "'minimal' 'low' 'medium' 'high' 'xhigh' 'max' 'none'",
+   "levels": [
+    "high",
+    "low",
+    "max",
+    "medium",
+    "minimal",
+    "xhigh"
+   ]
+  }
+ ],
+ "efforts": [
+  {
+   "effort": "none",
+   "levels": [],
+   "heard": "none"
+  },
+  {
+   "effort": "minimal",
+   "levels": [],
+   "heard": "low"
+  },
+  {
+   "effort": "low",
+   "levels": [],
+   "heard": "low"
+  },
+  {
+   "effort": "medium",
+   "levels": [],
+   "heard": "medium"
+  },
+  {
+   "effort": "high",
+   "levels": [],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "xhigh",
+   "levels": [],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "max",
+   "levels": [],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "none",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "heard": "none"
+  },
+  {
+   "effort": "minimal",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "heard": "low"
+  },
+  {
+   "effort": "low",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "heard": "low"
+  },
+  {
+   "effort": "medium",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "heard": "medium"
+  },
+  {
+   "effort": "high",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "xhigh",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "max",
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "none",
+   "levels": [
+    "low",
+    "high",
+    "max"
+   ],
+   "heard": "none"
+  },
+  {
+   "effort": "minimal",
+   "levels": [
+    "low",
+    "high",
+    "max"
+   ],
+   "heard": "low"
+  },
+  {
+   "effort": "low",
+   "levels": [
+    "low",
+    "high",
+    "max"
+   ],
+   "heard": "low"
+  },
+  {
+   "effort": "medium",
+   "levels": [
+    "low",
+    "high",
+    "max"
+   ],
+   "heard": "high"
+  },
+  {
+   "effort": "high",
+   "levels": [
+    "low",
+    "high",
+    "max"
+   ],
+   "heard": "high"
+  },
+  {
+   "effort": "xhigh",
+   "levels": [
+    "low",
+    "high",
+    "max"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "max",
+   "levels": [
+    "low",
+    "high",
+    "max"
+   ],
+   "heard": "max"
+  },
+  {
+   "effort": "none",
+   "levels": [
+    "medium"
+   ],
+   "heard": "none"
+  },
+  {
+   "effort": "minimal",
+   "levels": [
+    "medium"
+   ],
+   "heard": "medium"
+  },
+  {
+   "effort": "low",
+   "levels": [
+    "medium"
+   ],
+   "heard": "medium"
+  },
+  {
+   "effort": "medium",
+   "levels": [
+    "medium"
+   ],
+   "heard": "medium"
+  },
+  {
+   "effort": "high",
+   "levels": [
+    "medium"
+   ],
+   "heard": "medium"
+  },
+  {
+   "effort": "xhigh",
+   "levels": [
+    "medium"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "max",
+   "levels": [
+    "medium"
+   ],
+   "heard": "medium"
+  },
+  {
+   "effort": "none",
+   "levels": [
+    "minimal",
+    "max"
+   ],
+   "heard": "none"
+  },
+  {
+   "effort": "minimal",
+   "levels": [
+    "minimal",
+    "max"
+   ],
+   "heard": "minimal"
+  },
+  {
+   "effort": "low",
+   "levels": [
+    "minimal",
+    "max"
+   ],
+   "heard": "minimal"
+  },
+  {
+   "effort": "medium",
+   "levels": [
+    "minimal",
+    "max"
+   ],
+   "heard": "minimal"
+  },
+  {
+   "effort": "high",
+   "levels": [
+    "minimal",
+    "max"
+   ],
+   "heard": "max"
+  },
+  {
+   "effort": "xhigh",
+   "levels": [
+    "minimal",
+    "max"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "max",
+   "levels": [
+    "minimal",
+    "max"
+   ],
+   "heard": "max"
+  },
+  {
+   "effort": "none",
+   "levels": [
+    "low",
+    "high"
+   ],
+   "heard": "none"
+  },
+  {
+   "effort": "minimal",
+   "levels": [
+    "low",
+    "high"
+   ],
+   "heard": "low"
+  },
+  {
+   "effort": "low",
+   "levels": [
+    "low",
+    "high"
+   ],
+   "heard": "low"
+  },
+  {
+   "effort": "medium",
+   "levels": [
+    "low",
+    "high"
+   ],
+   "heard": "high"
+  },
+  {
+   "effort": "high",
+   "levels": [
+    "low",
+    "high"
+   ],
+   "heard": "high"
+  },
+  {
+   "effort": "xhigh",
+   "levels": [
+    "low",
+    "high"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "max",
+   "levels": [
+    "low",
+    "high"
+   ],
+   "heard": "high"
+  },
+  {
+   "effort": "none",
+   "levels": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+   ],
+   "heard": "none"
+  },
+  {
+   "effort": "minimal",
+   "levels": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+   ],
+   "heard": "minimal"
+  },
+  {
+   "effort": "low",
+   "levels": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+   ],
+   "heard": "low"
+  },
+  {
+   "effort": "medium",
+   "levels": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+   ],
+   "heard": "medium"
+  },
+  {
+   "effort": "high",
+   "levels": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+   ],
+   "heard": "high"
+  },
+  {
+   "effort": "xhigh",
+   "levels": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+   ],
+   "heard": "xhigh"
+  },
+  {
+   "effort": "max",
+   "levels": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max"
+   ],
+   "heard": "max"
+  }
+ ]
+}

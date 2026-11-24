@@ -1,0 +1,5 @@
+# What a search reads by default (spec 154 WS-03): `docs/architecture.md`, "Where a change reads".
+# The vendor is compiled but it is upstream's bytes, reached through `PATCHES.md`; the archive is the
+# record of closed specs. `git grep` and `rg --no-ignore` still read both.
+zig/vendor/
+specs/archive/

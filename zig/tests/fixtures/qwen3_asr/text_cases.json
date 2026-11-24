@@ -1,0 +1,534 @@
+{
+ "tokenizer": [
+  {
+   "text": "Hello, world!",
+   "ids": [
+    9707,
+    11,
+    1879,
+    0
+   ]
+  },
+  {
+   "text": " leading space",
+   "ids": [
+    6388,
+    3550
+   ]
+  },
+  {
+   "text": "It's 2026-10-25; we'll see 3.14159 and 1,000,000.",
+   "ids": [
+    2132,
+    594,
+    220,
+    17,
+    15,
+    17,
+    21,
+    12,
+    16,
+    15,
+    12,
+    17,
+    20,
+    26,
+    582,
+    3278,
+    1490,
+    220,
+    18,
+    13,
+    16,
+    19,
+    16,
+    20,
+    24,
+    323,
+    220,
+    16,
+    11,
+    15,
+    15,
+    15,
+    11,
+    15,
+    15,
+    15,
+    13
+   ]
+  },
+  {
+   "text": "多云转晴，气温二十五度。",
+   "ids": [
+    42140,
+    99718,
+    46670,
+    105212,
+    3837,
+    106447,
+    117920,
+    26381,
+    1773
+   ]
+  },
+  {
+   "text": "混合 English 和中文 text",
+   "ids": [
+    105063,
+    6364,
+    58143,
+    104811,
+    1467
+   ]
+  },
+  {
+   "text": "tabs\tand\nnewlines\r\n\n  trailing  ",
+   "ids": [
+    30993,
+    52477,
+    198,
+    931,
+    7969,
+    80823,
+    220,
+    27748,
+    256
+   ]
+  },
+  {
+   "text": "emoji 😀👍🏽 and café naïve",
+   "ids": [
+    37523,
+    90316,
+    144349,
+    145375,
+    323,
+    51950,
+    94880,
+    586
+   ]
+  },
+  {
+   "text": "<|im_start|>system\nctx<|im_end|>",
+   "ids": [
+    151644,
+    8948,
+    198,
+    3773,
+    151645
+   ]
+  },
+  {
+   "text": "language English<asr_text>ok",
+   "ids": [
+    11528,
+    6364,
+    151704,
+    562
+   ]
+  },
+  {
+   "text": "Title: A talk\nAuthor: Someone\nTags: ai, speech\nChapters: 00:00 Intro",
+   "ids": [
+    3851,
+    25,
+    362,
+    3061,
+    198,
+    7133,
+    25,
+    34172,
+    198,
+    15930,
+    25,
+    16391,
+    11,
+    8806,
+    198,
+    1143,
+    17425,
+    25,
+    220,
+    15,
+    15,
+    25,
+    15,
+    15,
+    51986
+   ]
+  },
+  {
+   "text": "ＡＢＣ全角",
+   "ids": [
+    133054,
+    139173,
+    134557,
+    35987,
+    63836
+   ]
+  },
+  {
+   "text": "Ünïcödé NFC é",
+   "ids": [
+    52491,
+    77,
+    37572,
+    66,
+    2956,
+    128505,
+    47205,
+    3958
+   ]
+  }
+ ],
+ "decode": [
+  {
+   "ids": [
+    151704,
+    9707,
+    13
+   ],
+   "text": "<asr_text>Hello."
+  },
+  {
+   "ids": [
+    151644,
+    8948,
+    198,
+    151645
+   ],
+   "text": "system\n"
+  },
+  {
+   "ids": [
+    100,
+    220,
+    99,
+    151643,
+    9707
+   ],
+   "text": "� �Hello"
+  }
+ ],
+ "prompts": [
+  {
+   "context": "",
+   "language": null,
+   "text": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\n<|audio_start|><|audio_pad|><|audio_end|><|im_end|>\n<|im_start|>assistant\n",
+   "ids": [
+    151644,
+    8948,
+    198,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    151669,
+    151676,
+    151670,
+    151645,
+    198,
+    151644,
+    77091,
+    198
+   ]
+  },
+  {
+   "context": "",
+   "language": "English",
+   "text": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\n<|audio_start|><|audio_pad|><|audio_end|><|im_end|>\n<|im_start|>assistant\nlanguage English<asr_text>",
+   "ids": [
+    151644,
+    8948,
+    198,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    151669,
+    151676,
+    151670,
+    151645,
+    198,
+    151644,
+    77091,
+    198,
+    11528,
+    6364,
+    151704
+   ]
+  },
+  {
+   "context": "",
+   "language": "Chinese",
+   "text": "<|im_start|>system\n<|im_end|>\n<|im_start|>user\n<|audio_start|><|audio_pad|><|audio_end|><|im_end|>\n<|im_start|>assistant\nlanguage Chinese<asr_text>",
+   "ids": [
+    151644,
+    8948,
+    198,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    151669,
+    151676,
+    151670,
+    151645,
+    198,
+    151644,
+    77091,
+    198,
+    11528,
+    8453,
+    151704
+   ]
+  },
+  {
+   "context": "Title: Pod 42 — 语音识别\nAuthor: X",
+   "language": null,
+   "text": "<|im_start|>system\nTitle: Pod 42 — 语音识别\nAuthor: X<|im_end|>\n<|im_start|>user\n<|audio_start|><|audio_pad|><|audio_end|><|im_end|>\n<|im_start|>assistant\n",
+   "ids": [
+    151644,
+    8948,
+    198,
+    3851,
+    25,
+    16821,
+    220,
+    19,
+    17,
+    1959,
+    220,
+    105761,
+    102450,
+    198,
+    7133,
+    25,
+    1599,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    151669,
+    151676,
+    151670,
+    151645,
+    198,
+    151644,
+    77091,
+    198
+   ]
+  },
+  {
+   "context": "Title: Pod 42 — 语音识别\nAuthor: X",
+   "language": "English",
+   "text": "<|im_start|>system\nTitle: Pod 42 — 语音识别\nAuthor: X<|im_end|>\n<|im_start|>user\n<|audio_start|><|audio_pad|><|audio_end|><|im_end|>\n<|im_start|>assistant\nlanguage English<asr_text>",
+   "ids": [
+    151644,
+    8948,
+    198,
+    3851,
+    25,
+    16821,
+    220,
+    19,
+    17,
+    1959,
+    220,
+    105761,
+    102450,
+    198,
+    7133,
+    25,
+    1599,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    151669,
+    151676,
+    151670,
+    151645,
+    198,
+    151644,
+    77091,
+    198,
+    11528,
+    6364,
+    151704
+   ]
+  },
+  {
+   "context": "Title: Pod 42 — 语音识别\nAuthor: X",
+   "language": "Chinese",
+   "text": "<|im_start|>system\nTitle: Pod 42 — 语音识别\nAuthor: X<|im_end|>\n<|im_start|>user\n<|audio_start|><|audio_pad|><|audio_end|><|im_end|>\n<|im_start|>assistant\nlanguage Chinese<asr_text>",
+   "ids": [
+    151644,
+    8948,
+    198,
+    3851,
+    25,
+    16821,
+    220,
+    19,
+    17,
+    1959,
+    220,
+    105761,
+    102450,
+    198,
+    7133,
+    25,
+    1599,
+    151645,
+    198,
+    151644,
+    872,
+    198,
+    151669,
+    151676,
+    151670,
+    151645,
+    198,
+    151644,
+    77091,
+    198,
+    11528,
+    8453,
+    151704
+   ]
+  }
+ ],
+ "parse": [
+  {
+   "raw": "language English<asr_text>Hello there.",
+   "forced": null,
+   "language": "English",
+   "text": "Hello there."
+  },
+  {
+   "raw": "language Chinese<asr_text>你好。",
+   "forced": null,
+   "language": "Chinese",
+   "text": "你好。"
+  },
+  {
+   "raw": "  language English<asr_text>  spaced  ",
+   "forced": null,
+   "language": "English",
+   "text": "spaced"
+  },
+  {
+   "raw": "language None<asr_text>",
+   "forced": null,
+   "language": "",
+   "text": ""
+  },
+  {
+   "raw": "language None<asr_text>something",
+   "forced": null,
+   "language": "",
+   "text": "something"
+  },
+  {
+   "raw": "no tag at all",
+   "forced": null,
+   "language": "",
+   "text": "no tag at all"
+  },
+  {
+   "raw": "Already forced text.",
+   "forced": "English",
+   "language": "English",
+   "text": "Already forced text."
+  },
+  {
+   "raw": "language English<asr_text>forced keeps the tag",
+   "forced": "English",
+   "language": "English",
+   "text": "language English<asr_text>forced keeps the tag"
+  },
+  {
+   "raw": "language english\n<asr_text>multi",
+   "forced": null,
+   "language": "English",
+   "text": "multi"
+  },
+  {
+   "raw": "meta\nlanguage cHINese\nmore<asr_text>body",
+   "forced": null,
+   "language": "Chinese",
+   "text": "body"
+  },
+  {
+   "raw": "language English<asr_text>aaaaaaaaaaaaaaaaaaaaaaaaa end",
+   "forced": null,
+   "language": "English",
+   "text": "a end"
+  },
+  {
+   "raw": "language English<asr_text>hahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha!",
+   "forced": null,
+   "language": "English",
+   "text": "ha!"
+  },
+  {
+   "raw": "language English<asr_text>start the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat the cat done",
+   "forced": null,
+   "language": "English",
+   "text": "start the cat done"
+  },
+  {
+   "raw": "language Chinese<asr_text>嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯嗯",
+   "forced": null,
+   "language": "Chinese",
+   "text": "嗯"
+  },
+  {
+   "raw": "language English<asr_text>ababababababababababababababababababab",
+   "forced": null,
+   "language": "English",
+   "text": "ababababababababababababababababababab"
+  },
+  {
+   "raw": "",
+   "forced": null,
+   "language": "",
+   "text": ""
+  },
+  {
+   "raw": "   ",
+   "forced": null,
+   "language": "",
+   "text": ""
+  }
+ ],
+ "languages": [
+  {
+   "given": "english",
+   "name": "English",
+   "supported": true
+  },
+  {
+   "given": " CHINESE ",
+   "name": "Chinese",
+   "supported": true
+  },
+  {
+   "given": "cantonese",
+   "name": "Cantonese",
+   "supported": true
+  },
+  {
+   "given": "Klingon",
+   "name": "Klingon",
+   "supported": false
+  }
+ ]
+}

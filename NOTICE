@@ -1,0 +1,26 @@
+zspark
+Copyright 2026 zspark contributors
+
+zspark is licensed under the Apache License, Version 2.0 (LICENSE).
+
+The CUDA kernels under zig/kernels/nvfp4/ and zig/kernels/common/, and the weight layouts in zig/src/weights/nvfp4.zig, derive from
+TensorFold 0.6.5 (https://github.com/ashhart/TensorFold, commit 609ca41), Copyright 2026 TensorFold contributors,
+also under the Apache License, Version 2.0. TensorFold code written before its 0.6.0 release keeps its MIT notice
+(LICENSES/MIT.txt). Each derived file names its source and what changed.
+
+zig/src/models/qwen4/draft_vocab.txt is TensorFold's families/qwen4_exp/cuda/draft_vocab.txt, unchanged.
+
+`zspark serve` is built with TensorFold 1.3.4's host (https://github.com/ashhart/TensorFold, commit 12ebd414),
+Copyright 2026 TensorFold contributors, under the Apache License, Version 2.0. The files it is built from are
+kept under zig/vendor/tensorfold/ at their upstream paths (its zig/src/server/, and under zig/src/core/
+tokenizer/, template/, lanes/, engine_api.zig, save_guard.zig, checkpoint_config.zig and what they import,
+zig/src/living/ and zig/src/platform/sys.zig; its server's recorded replies and their
+checker under zig/tests/server/), with its own LICENSE, NOTICE, THIRD_PARTY_NOTICES.md and LICENSES/ beside
+them. They were imported as published; a file changed since is listed, with what changed, in
+zig/vendor/tensorfold/PATCHES.md.
+
+The extended audio decoder statically links Symphonia 0.6.1 and symphonia-opus 0.1.3 under the
+Mozilla Public License 2.0 (LICENSES/MPL-2.0.txt). Their corresponding source is available at
+https://github.com/pdeljanov/Symphonia and https://github.com/jiztastamablastamarang/symphonia-opus,
+and as the exact versioned crates identified by zig/src/audio/Cargo.lock. Cargo.lock records the
+versions and checksums of the other Rust dependencies as well.

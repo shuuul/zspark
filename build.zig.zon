@@ -1,0 +1,24 @@
+.{
+    .name = .zspark,
+    .version = "2026.11.12",
+    .fingerprint = 0x404ab734ae3e57c4,
+    .minimum_zig_version = "0.17.1",
+    .dependencies = .{
+        .cutlass = .{
+            .url = "https://github.com/NVIDIA/cutlass/archive/refs/tags/v4.8.1.tar.gz",
+            .hash = "N-V-__8AABAAXAp6IIOatjnjG5oL73ZAnsjjJcx8PftYU7GL",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "zig",
+        "specs",
+        "tools",
+        "AGENTS.md",
+        "README.md",
+        "LICENSE",
+        "NOTICE",
+        "LICENSES",
+    },
+}

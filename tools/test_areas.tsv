@@ -1,0 +1,31 @@
+# The one list of the test areas (spec 171): `tools/check.sh` reads it (check_areas.sh's `areas_load`) and
+# `build.zig` embeds it, so `zig build` rebuilds when it changes; `check.sh scope()` counts it shared.
+# Tab-separated, one row an area; `#` lines and blank ones are ignored. The columns:
+#   step      the `zig build test-STEP` step and `check.sh STEP` verb
+#   kind      host: no GPU, no kernels linked (the areas the host tier's steps cover first); gpu: a run takes
+#             gpu.lock; whole: gpu, and the binary built with `tier.whole` true for the whole-model tests
+#   tier      yes: the step is a tier of its own that also runs the tools' test steps (the host tier)
+#   split     yes: `full` splits the step between the two Sparks (`check.sh split`, in this file's order);
+#             only the host's subareas, which the host tier's root already holds, may say no
+#   seconds   the split's fallback cost of the step where no `*-full-STEP.times` table says otherwise
+#             (a row of split=no has `-`)
+#   model     `zig/src/models/`, `zig/kernels/` and `zig/tests/fixtures/`'s name the step scopes changed
+#             paths to (`check.sh`'s scope), or `-` where the step is no model's
+#   root      the step's explicit Zig test root: `zig/STEP_tests.zig` by convention
+#   filters   the step's `-Dtest-filter`s when none is asked for, `|`-separated (`-` = every test the
+#             binary lists); the whole row's are the full tier's `tier.whole` test names — the list
+#             `build.zig` once held as `whole_tests`, now this row alone
+#   about     `zig build`'s one line on the step
+#step	kind	tier	split	seconds	model	root	filters	about
+host	host	yes	yes	57	-	zig/host_tests.zig	-	The host tier: the tests that need no GPU and no CUDA toolkit
+text	host	no	no	-	-	zig/text_tests.zig	-	The host tier's src/text/ alone
+server	host	no	no	-	-	zig/server_tests.zig	tests.server.|src.server.	The host tier's src/server/ alone
+image	host	no	no	-	-	zig/image_tests.zig	-	The host tier's src/image/ alone
+audio	host	no	no	-	-	zig/audio_tests.zig	-	The host tier's src/audio/ alone
+weights	gpu	no	yes	21	-	zig/weights_tests.zig	-	The device code every model shares alone: linears, experts, ranks (needs the GPU)
+qwen4	gpu	no	yes	456	qwen4	zig/qwen4_tests.zig	tests.models.qwen4.	src/models/qwen4/ alone, no whole model (needs the GPU)
+glm5	gpu	no	yes	198	glm5	zig/glm5_tests.zig	tests.models.glm5.	src/models/glm5/ alone, no whole model (needs the GPU)
+unlimited_ocr	gpu	no	yes	12	unlimited_ocr	zig/unlimited_ocr_tests.zig	tests.models.unlimited_ocr.	src/models/unlimited_ocr/ alone (needs the GPU)
+qwen3_asr	gpu	no	yes	224	qwen3_asr	zig/qwen3_asr_tests.zig	tests.models.qwen3_asr.	src/models/qwen3_asr/ alone, its checkpoint's tests included (needs the GPU)
+nemotron	gpu	no	yes	60	nemotron	zig/nemotron_tests.zig	tests.models.nemotron.	src/models/nemotron/ alone (needs the GPU)
+whole	whole	no	yes	153	-	zig/whole_tests.zig	tests.models.qwen4.compare_vllm_test.test.a mixed-precision checkpoint's whole model against the card's vLLM|tests.models.qwen4.served_test.test.an image request on FP4-Local (spec 019 WS-04 and WS-05)	The full tier's whole-model tests alone (needs the GPU)

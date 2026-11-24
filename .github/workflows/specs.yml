@@ -1,0 +1,65 @@
+name: specs
+
+# The local hooks are the gate (`git config core.hooksPath .githooks`): both spec steps
+# run before every push. CI runs them through test-host on matching pull requests
+# and manual dispatch. The host tier needs neither a GPU nor the CUDA toolkit.
+on:
+  pull_request:
+    paths:
+      - "specs/**"
+      - "docs/recipes/**"
+      - "docs/environment.md"
+      - "**/AGENTS.md"
+      - "zig/**"
+      - "tools/**"
+      - "build.zig"
+      - "build.zig.zon"
+      - ".github/workflows/specs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: specs-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host:
+    # The host tier also runs check-specs, test-specs, test-cache, test-host-descriptor
+    # and test-areas. Checkpoint tests skip when their ZSPARK_* variable is unset.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # On a PR the checked-out merge commit's first parent is the base.
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Check the test inventory and Qwen4 coverage
+        run: tools/check.sh inventory
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.17.1
+      - name: Select the Rust toolchain for the audio decoders
+        run: rustup default 1.85.1
+      - name: Host tier (no GPU, no CUDA toolkit)
+        run: zig build test-host
+      - name: Check whether vendor contracts are affected
+        id: vendor
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ]; then
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          else
+            paths=$(git diff --name-only HEAD^1 HEAD -- zig/vendor tools/host_descriptor.zig \
+              'tools/vendor*' tools/check_vendor.zig build.zig build.zig.zon .github/workflows/specs.yml)
+            if [ -n "$paths" ]; then echo 'changed=true' >> "$GITHUB_OUTPUT"; fi
+          fi
+      - name: TensorFold HTTP goldens
+        if: steps.vendor.outputs.changed == 'true'
+        run: zig build test-golden
+      - name: Vendor import and recovery contracts
+        if: steps.vendor.outputs.changed == 'true'
+        run: zig build test-vendor

@@ -1,0 +1,77 @@
+# `check.sh qwen4-files`' filters (was check.sh's QWEN4_FILES, spec 103): one entry a test file of
+# `zig/tests/models/qwen4/` the area runs once — the file's path below `tests.models.`, `.test.`, then the
+# test's name cut to 60 characters. An entry whose file is missing, whose test is gone, which is given
+# twice, or which names a `tier.whole`-gated test is refused (`areas_check_qwen4` in tools/check_areas.sh,
+# run by `qwen4-files` and `sets`); so is a runnable test file with no entry. A file whose tests are all
+# gated on `tier.whole` takes no entry: under the area's `tier.whole` false they all skip
+# (`compare_vllm_test`; `whole` runs it). `#` lines and blank ones are ignored.
+# The first block was chosen from one stamped run of the area, each file's quickest test. The block after
+# covers files added since; the choice is a narrow case read from the source, not a measured one (no timing
+# run yet, spec 171).
+qwen4.blocks.attention_cache_test.test.a fork inside an extent copies its rows on the device, and e
+qwen4.blocks.attention_rope_test.test.a text sequence's rotary words (zeros) give prep and the poo
+qwen4.blocks.attention_selection_test.test.the selection takes the best blocks, the lower block among e
+qwen4.blocks.attention_table_test.test.prep through a table of scattered extents writes the contigu
+qwen4.blocks.attention_test.test.prep normalizes, rotates and stores each head as the host do
+qwen4.blocks.gdn_test.test.a DeltaNet window equals its serial steps, and a replayed pr
+qwen4.blocks.hc_aligned_test.test.the residual norm refuses h, normed or scale off the start i
+qwen4.blocks.hc_test.test.embed copies the token's row into every stream
+qwen4.blocks.hc_window_test.test.the read-out's up and mix as one launch at a window's rows g
+qwen4.blocks.moe_test.test.top-k takes the largest logits, the lower id among equals, a
+qwen4.blocks.ple_gather_test.test.n-gram ids equal TensorFold's
+qwen4.blocks.ple_slots_test.test.the pool's PLE convolution leaves a row whose slot or segmen
+qwen4.blocks.ple_test.test.the PLE's projections, gate and convolution match the host
+qwen4.blocks.profile_test.test.PROFILE Flash Next's own kernels launched alone at the model
+qwen4.blocks.state_test.test.windows slide to the last kept rows
+qwen4.checkpoint_prefix_test.test.a checkpoint's first layers, one load on FP8 caches: a pool 
+qwen4.config_test.test.parses the text config and its derived sizes
+qwen4.draft_test.test.a followed reply is the text given, its rounds verified agai
+qwen4.forward_checkpoint_test.test.a mixed-precision checkpoint's first layers, to its first at
+qwen4.forward_image_test.test.attach refuses an image that does not fit its prompt
+qwen4.forward_test.test.captured graphs give the eager step's bits, one graph for ea
+qwen4.layout_test.test.resolves every tensor of a whole checkpoint
+qwen4.model_test.test.a mixed-precision checkpoint's faces: MXFP8 stacked, the sto
+qwen4.mtp_checkpoint_test.test.drafts as stored: a checkpoint's first layers draft with no 
+qwen4.mtp_paying_test.test.paying by the round: one seat alone is priced as without it,
+qwen4.mtp_pick_test.test.probability: a token's share at temperature 1
+qwen4.mtp_ranks_test.test.the random model's MTP head split over two ranks: each rank
+qwen4.mtp_test.test.rmsnorm: a row over its own RMS, the same alone and among ot
+qwen4.pool.hall_carry_test.test.more states than the store's budget holds: the newest are ca
+qwen4.pool.hall_draft_test.test.in the pool the head runs no row for the drafts a constraint
+qwen4.pool.hall_image_test.test.an image prompt alone in the pool gives the session's tokens
+qwen4.pool.hall_keep_test.test.a seat's rows do not change when the seat beside it takes st
+qwen4.pool.hall_open_states_test.test.the load's check holds the states' budget out of what is lef
+qwen4.pool.hall_open_test.test.what serve's load says of a pool: its extents fit what is le
+qwen4.pool.hall_ranks_test.test.the pool on a rank of two, the random shares with an attenti
+qwen4.pool.hall_score_test.test.a pass's seats scored in one launch are each the row scored
+qwen4.pool.hall_spill_test.test.a conversation whose extent the pool takes back is written a
+qwen4.pool.hall_streams_test.test.serve's pool is the streams' contexts: the defaults' is 1,04
+qwen4.pool.hall_test.test.shared rounds: two replies served equal each alone
+qwen4.pool.hall_warm_test.test.a live request that comes while a warm pass is the lone stre
+qwen4.pool.rounds_behind_test.test.deferred rounds: windows of drafts kept in part go on from
+qwen4.pool.rounds_ranks_test.test.a rank refuses a round its tables do not cover, a table past
+qwen4.pool.rounds_test.test.shared rounds: a graph equals direct launches
+qwen4.ranks_gate_test.test.a share alone against the whole model, the gate
+qwen4.ranks_test.test.ranks-check plan: launched and through graphs, in loopback
+qwen4.served_test.test.a reply through the engine interface is the serial reply's t
+qwen4.session.learnt_test.test.a state written by one session is read by the next: an atten
+qwen4.session.marks_test.test.a stride's state stands at the target or at most fifteen pos
+qwen4.session.pair_test.test.two ranks keep the sequence they ran, the head whole beside
+qwen4.session.session_constraint_test.test.without a constraint a reply asks the matcher nothing and is
+qwen4.session.session_parked_test.test.a conversation's first prompt after a long one holds the lon
+qwen4.session.session_snapshot_test.test.snapshots thin out toward a sequence's start: the previous p
+qwen4.session.session_stride_test.test.a reply's rounds allocate nothing on the device: its strides
+qwen4.session.session_test.test.a reply drafts as deep as a window takes unless told, served
+qwen4.share_layout_test.test.a mixed-precision checkpoint's csf experts: each rank's wind
+qwen4.share_test.test.two ranks' rows, columns and DeltaNet heads reassemble to th
+qwen4.vision_test.test.tower: the config's vision_config is checked, the published 
+# added with the coverage check (spec 171): files the list above missed; a narrow case each from the
+# source, the quickest not measured
+qwen4.blocks.hc_fused_test.test.the mixer's read-out, without inject gates, in two launches 
+qwen4.checks.ranks_drafter_test.test.Given drafts from an opened drafter the pair's serial reply,
+qwen4.dflash2.config_test.test.a Qwen drafter's config: stored window, a rank's halves, the
+qwen4.dflash2.drafter_test.test.DFlash2: a session's drafted replies match serial
+qwen4.dflash2.ranks_loopback_test.test.two ranks in loopback: pair.reply with a given DFlash2 draft
+qwen4.pool.hall_depth_test.test.a seat's drafts are cut to four on two ranks while three sea
+qwen4.pool.hall_prefix_wait_test.test.the bound releases the waiter, which fills for itself
+qwen4.taps_test.test.a row alone equals that row among others

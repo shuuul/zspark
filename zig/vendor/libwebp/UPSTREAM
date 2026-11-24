@@ -1,0 +1,12 @@
+repository: https://chromium.googlesource.com/webm/libwebp
+commit: 4fa21912338357f89e4fd51cf2368325b59e9bd9 (the tag v1.6.0, 2025-07-07)
+version: 1.6.0, the release Pillow 12.3.0 links in TensorFold's container (`PIL.features.version("webp")`)
+license: BSD-3-Clause (COPYING), with Google's patent grant (PATENTS)
+imported: 2026-10-17 (spec 019 WS-07), by `tools/vendor_c.sh libwebp DIR` from a clone of the tag
+files: 68 (836,050 bytes), listed with their sha256 in MANIFEST.sha256
+
+What was taken: libwebpdecoder's sources as makefile.unix lists them (DEC_OBJS, DSP_DEC_OBJS, UTILS_DEC_OBJS)
+for aarch64: 36 .c files, the generic and the NEON ones; the MIPS, MSA, SSE2, SSE4.1 and AVX2 sources, which
+compile to nothing on this target, were left. Then every header those 36 include, as `zig cc -MM` lists them
+(29), and COPYING, PATENTS and AUTHORS. Not taken: the encoder, demux and mux (so an animated WebP is not
+decoded), sharpyuv, the examples, imageio and the build files.

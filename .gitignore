@@ -1,0 +1,10 @@
+.zig-cache/
+zig-out/
+zig-pkg/
+*.o
+.claude/
+__pycache__/
+
+# Machine-local launcher configuration (see zspark.local.example.sh)
+zspark.local.sh
+/.env.local

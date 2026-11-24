@@ -1,0 +1,63 @@
+--- a/vllm/models/qwen4_exp/nvidia/model.py
++++ b/vllm/models/qwen4_exp/nvidia/model.py
+@@ -8,6 +8,45 @@
+ import torch
+ from torch import nn
+ 
++# zspark spec 125 WS-02: DFlash2's completed-layer taps, written while ZSPARK_TAPS_DIR/label names a request.
++# Layer i's completed residual is the `combined` that layer i+1's attention read-out returns (the layers
++# combine late); i in ZSPARK_TAPS_LAYERS. A forward a file set: SEQ.pos and SEQ.ids (int64 [rows]),
++# SEQ.L{i}.h (bf16 [rows, hc_count * hidden]) and SEQ.L{i}.mean (bf16 [rows, hidden], the card's patch's op).
++import os as _zs_os
++
++_ZS_DIR = _zs_os.environ.get("ZSPARK_TAPS_DIR")
++_ZS_LAYERS = tuple(int(w) for w in _zs_os.environ.get("ZSPARK_TAPS_LAYERS", "5,15,25,35,45").split(","))
++_ZS_SEQ = [0]
++
++
++def _zs_label():
++    try:
++        with open(_zs_os.path.join(_ZS_DIR, "label")) as fh:
++            return fh.read().strip()
++    except OSError:
++        return ""
++
++
++def _zs_tap(layer, combined, positions, input_ids, hc_count, hidden):
++    if _ZS_DIR is None or layer not in _ZS_LAYERS:
++        return
++    label = _zs_label()
++    if not label:
++        return
++    rows = combined.shape[0]
++    out = _zs_os.path.join(_ZS_DIR, label)
++    _zs_os.makedirs(out, exist_ok=True)
++    if layer == _ZS_LAYERS[0]:
++        _ZS_SEQ[0] += 1
++        pos = positions[0] if positions.dim() == 2 else positions
++        pos[:rows].to(torch.int64).cpu().numpy().tofile(f"{out}/{_ZS_SEQ[0]:05d}.pos")
++        if input_ids is not None:
++            input_ids[:rows].to(torch.int64).cpu().numpy().tofile(f"{out}/{_ZS_SEQ[0]:05d}.ids")
++    assert combined.shape[-1] == hc_count * hidden
++    combined.contiguous().view(torch.int16).cpu().numpy().tofile(f"{out}/{_ZS_SEQ[0]:05d}.L{layer}.h")
++    mean = combined.unflatten(-1, (hc_count, hidden)).mean(dim=-2)
++    mean.contiguous().view(torch.int16).cpu().numpy().tofile(f"{out}/{_ZS_SEQ[0]:05d}.L{layer}.mean")
++
+ from vllm import envs
+ from vllm.config import VllmConfig
+ from vllm.distributed import get_pp_group
+@@ -340,6 +379,14 @@
+             hidden_states, block_input, injection = attn_hc.combine_and_mix(
+                 hidden_states, prev_block_output, prev_injection
+             )
++            _zs_tap(
++                self.layer_idx - 1,
++                hidden_states,
++                positions,
++                input_ids,
++                self.config.hc_count,
++                self.config.hidden_size,
++            )
+         else:
+             hidden_states, block_input, injection = attn_hc.mix(hidden_states)
+ 

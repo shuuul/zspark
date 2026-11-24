@@ -1,0 +1,19 @@
+{
+ "comment": "A set for tools/reference/client_bench.py (spec 034): one weather call made freely and required, with thinking and without, greedy and sampled. `SET=tools/reference/required_call_bench.json tools/reference/client_bench.sh zspark CHECKPOINT OUT SEED`. A reply's tokens a second are the server's own, in OUT/harness.log; the client's `decode_tps` is between the first delta and the last. zspark only: TensorFold's gate holds no arguments.",
+ "corpus": [],
+ "chars_per_token": 2.9,
+ "warm": {"user": "Write three sentences about the sea.", "max_tokens": 32},
+ "decode_repeats": 5,
+ "decode": [
+  {"name": "call-free", "max_tokens": 256, "tools": true, "user": "What's the weather in Paris for the next 3 days, in celsius? Use the tool."},
+  {"name": "call-required", "max_tokens": 256, "tools": true, "tool_choice": "required", "user": "What's the weather in Paris for the next 3 days, in celsius? Use the tool."},
+  {"name": "call-free-thinking", "max_tokens": 1024, "tools": true, "thinking": true, "user": "What's the weather in Paris for the next 3 days, in celsius? Use the tool."},
+  {"name": "call-required-thinking", "max_tokens": 1024, "tools": true, "thinking": true, "tool_choice": "required", "user": "What's the weather in Paris for the next 3 days, in celsius? Use the tool."},
+  {"name": "call-required-sampled", "max_tokens": 256, "tools": true, "tool_choice": "required", "temperature": 0.7, "top_p": 0.8, "top_k": 20, "seed": 7, "user": "What's the weather in Paris for the next 3 days, in celsius? Use the tool."},
+  {"name": "call-required-thinking-sampled", "max_tokens": 1024, "tools": true, "thinking": true, "tool_choice": "required", "temperature": 0.7, "top_p": 0.8, "top_k": 20, "seed": 7, "user": "What's the weather in Paris for the next 3 days, in celsius? Use the tool."}
+ ],
+ "tools": [{"type": "function", "function": {"name": "get_weather", "description": "Current weather for a city", "parameters": {"type": "object", "properties": {"city": {"type": "string"}, "days": {"type": "integer"}, "units": {"type": "string", "enum": ["c", "f"]}}, "required": ["city"]}}}],
+ "prompt_sizes": [],
+ "prompt_repeats": 0,
+ "prompt": {"max_tokens": 16, "lead": "", "question": "", "second": "", "edited": ""}
+}

@@ -1,0 +1,207 @@
+repository: https://github.com/ashhart/TensorFold
+commit: 12ebd414de443485d281768036ac4835e5abe8fe (tag v1.3.4, 2026-11-22)
+version: 1.3.4
+license: Apache-2.0
+imported: 2026-11-23, using `tools/vendor_import.sh` on the v1.3.4 source tree. Before it: 1.3.3,
+  1e4a32cb, 2026-11-22 (1546 files, 11,796,002 bytes); 1.3.2, b472b9f84, 2026-11-21 (1507 files, 11,389,929 bytes); 1.2.8, 09a9eb33, 2026-11-13 (1353 files, 10,046,243 bytes); 1.2.7, 93a2e93e, 2026-11-12 (1308 files, 9,645,757 bytes); 1.2.5, 8be9c408,
+  2026-11-09 (1232 files, 8,979,927 bytes); 1.2.3, 6ec5fa4c, 2026-11-08 (1154 files, 8,254,496 bytes); 1.2.1, 1db3edbe,
+  2026-11-03 (1073 files, 7,319,246 bytes); 1.1.5, 84e0d560, (886 files, 6,041,487 bytes); 1.1.1,
+  b10231b, 2026-10-19 (778 files, 5,220,554 bytes); 1.0.12,
+  833bbfcba9109bb38c7af7303f80da0ca12b213c, 2026-10-17 (624 files, 4,149,012 bytes, picture/'s 7 among them);
+  1.0.5, bec00ae6961a43a9ab73c4fa9338c167b3f82851, 2026-10-11 (471 files, 2,407,066 bytes); 1.0.4,
+  d4fc1964d0637c33e09ddac18aec936f962bb646, the same day (454 files, 2,182,764 bytes); 1.0.2,
+  f8fe17d24629aedabf90bbf78279dd776e6d62e7, 2026-10-10 (436 files, 1,984,240 bytes)
+files: 1581 (12,105,577 bytes), listed with their sha256 in MANIFEST.sha256
+
+The 1.3.4 host adds tool parser and grammar bounds, multiple choices and cache salt handling. The
+host descriptor includes upstream's `core/audio.zig` for the speech route's output resampler.
+
+Against 1.3.2's import, 39 files came, 86 changed and none went. The descriptor includes
+`core.digest_cache` and its two relative imports for the server's execution witness. `engine_request.zig` now defines
+`engine_api.Request`. The server adds deadlines, prompt-cache flush, structural tags, execution witness,
+deferred tools and Responses namespaces. The Responses suite adds two namespace recordings.
+
+Against 1.2.8's import, the closure grows by 154 files. The descriptor wires the shared checkpoint EOS policy,
+the Unlimited-OCR chat template, and the grammar compiler's new C++ header. Model discovery, request-journal
+metrics, and the updated server goldens come from this release.
+
+Against 1.2.7's import: 45 files came and none went; no root moved and no module is new. The descriptor's
+core stub now re-exports the existing picture module for the OCR routes and jpeg_out; no file gets a second owner.
+zig/src/core/ 14: the engine's OCR half `engine_ocr.zig` (the `Info.ocr`
+reader and `api.ocr` types, `engine_vision.zig`'s `Size` and `PreparedImage.frame` with it), `engine_admission.zig`
+(`engine_api.zig`'s `Admit`, `Ledger`, `Memory` and `MemorySource` re-exported from engine_admission.zig and
+engine_status.zig), `ocr_html.zig` and its test, `prompt_intermediate.zig`, `prompt_radix_make.zig`,
+`prompt_radix_parts.zig` and their tests, lanes' `drafter_depth_sweep.zig` and `depth_floor_test.zig`,
+`template/limits_test.zig` (the template depth, step and scratch limits, #3072), `tokenizer/regex_test.zig`,
+`platform/environment_flashnext_test.zig`; zig/src/server/ 31: `POST /v1/requests/{id}/cancel`
+(`cancel_ids.zig`, `cancel_route_test.zig`), `POST /v1/ocr` in Mistral's contract (`ocr/` 21 files: route,
+mistral, mistral_reply, run, budget, fetch, geometry, markdown, size, types, a fixture and the tests — an
+`Info.ocr` of null answers `bad_input`, so a zspark engine serves no such route), `connection_cli.zig`
+(`--max-connections`, `--max-connections-per-address`, `--trusted-proxy`), `jpeg_out.zig`,
+`private_files_test.zig`, `chat_ocr_test.zig`, `cli_profile_test.zig` (the --profile refusals) and
+`compact_at_cli_test.zig` (a later --compact-at replaces an earlier, #2883); no license text came or went.
+The recorded replies (335 cases, 55 security) are byte for byte 1.2.7's; upstream's security_check.py,
+which changed, is not taken.
+
+2026-11-12 (spec 169): `zig/src/grammar/tf_budget.h` and `tf_budget.cc` taken, upstream's since 1.1.8's
+grammar_budget (#1473), which no Zig import reaches and the descriptor's `beside` had never named — the 1.2.1,
+1.2.5 and 1.2.7 imports each left it, and `zig build grammar` failed to compile `tf_grammar.cc` without them.
+The two files and their manifest rows are what `tools/vendor_import.sh` of the same checkout stages now that
+`tools/host_descriptor.zig` names them.
+
+
+Against 1.2.5's import: 74 files came and none went; no root moved but `nemotron_limits` came:
+`zig/src/families/nemotron/limits.zig` (Nemotron Metal's position allocation), which status_routes.zig and
+thinking_reserve_test.zig import by name since 1.2.7, a root of the script's and an import of build.zig's
+`Host` (upstream's `zig/build/server.zig` hands it to the server). zig/src/core/ 20: the 1.2.6 prompt cache
+(concurrent keeps, reserved room, redundancy eviction and the newest-state rule: `prompt_cache_keep.zig`,
+`prompt_cache_reserve.zig`, `prompt_cache_divergence.zig`, `prompt_cache_status.zig`, `lane_cache_queue.zig`,
+`checkpoint_names.zig` and their tests), lanes' draft-tree walk (`draft_tree.zig`, `sampling_row.zig`,
+`step_cap.zig`, `depth_constants.zig`), `startup_receipt.zig`, `platform/isolate.zig`; zig/src/living/ 7 (the
+correction and shrink files of slide's lessons); zig/src/server/ 46: the Responses WebSocket mode
+(`responses_ws*.zig` 9, `ws_frame.zig`, `ws_upgrade.zig`, `ws_cache.zig`, `responses_sink.zig`,
+`responses_store.zig`, `openai_prepare.zig`), the one request gate (`request_gate.zig`,
+`cli_recall.zig`), `images_generations.zig` (an images route beside speech's), the tool-call id key
+(`tool_id_key.zig`, `tool_args_close.zig`, `tool_json_cut.zig`, `tool_call_ids_test.zig`), slide's
+correction/shrink halves of the lesson files, `stats_snapshot.zig`, `startup_receipt.zig`, the stream-scan
+sources, `test_permissions.zig` and the cli/env/limit/flag-dep tests. The names left unresolved are 1.2.5's.
+
+What was taken, each file at its upstream path and byte for byte:
+
+- The sources the build compiles: the transitive closure, over `@import` and `@embedFile` of a relative path,
+  of the fifteen modules' roots (zig/src/core/lanes/lanes.zig, zig/src/core/engine_api.zig,
+  zig/src/core/tokenizer/tokenizer.zig, zig/src/core/template/template.zig, zig/src/server/root.zig,
+  zig/src/server/json.zig, zig/src/core/picture/picture.zig and, since 1.1.1, zig/src/platform/sys.zig,
+  zig/src/core/save_guard.zig, zig/src/core/checkpoint_config.zig and zig/src/living/living.zig, since
+  1.1.4 zig/src/families/deepseek_v41/serve/template.zig, `dsv41_chat`, which hf_text.zig imports by name,
+  since 1.2.3 zig/src/core/profile.zig, `profile`, which engine_api imports by name, and since 1.2.7
+  zig/src/families/nemotron/limits.zig, `nemotron_limits`, which status_routes.zig imports by name) and of
+  test-golden's two programs (zig/tests/server/fake_serve.zig, zig/tests/server/golden_check.zig). An import by
+  name (`engine_api`, `json`, `lanes`, `picture`, `server`, `template`, `tokenizer`, `sys`, `save_guard`,
+  `checkpoint_config`, `living`, `dsv41_chat`, `profile`, `bf16_round`, `nemotron_limits`) is one of the roots, but `drama_prompt` (1.1.4's speech.zig and
+  drama_voice.zig: Drama's zig/src/families/drama3/prompt.zig, whose closure is that family's engine), which
+  build.zig's `Host` stands in for with a stub that links and builds nothing (no model of zspark speaks). Upstream's build hands `sys`, `save_guard` and
+  `checkpoint_config` to every module of its own by a walk of the build graph (its `zig/build/sys.zig`,
+  `save_guard.zig`, `checkpoint_config.zig`), `profile` the same way since 1.2.3 (`zig/build/profile.zig`), and
+  `living` to the server (`zig/build/server.zig`); build.zig's
+  `Host` names them. Names that stay unresolved: `qwen27_masks` and `qwen27_mask_fake`, in
+  zig/src/server/tool_required_test.zig's test blocks, and since 1.1.4 `native_engines` and `build_options` in
+  zig/src/server/engines.zig, which nothing the build analyses calls. The compiler loads an
+  imported file even where the import stands in a test block it never analyses, so upstream's `*_test.zig` and
+  `tests.zig` in that closure are part of it: without one the build fails.
+- Beside the closure, what the build compiles that no `@import` reaches: zig/src/grammar/tf_grammar.cc
+  (11,000 bytes) with its tf_budget.h and tf_budget.cc (17,335 bytes: the grammar_budget tables, upstream's
+  since 1.1.8), libtfgrammar's C ABI over xgrammar, which `zig build grammar -Dxgrammar=DIR` builds with an
+  xgrammar v0.2.8 checkout (upstream's `zig/build/grammar.zig`; xgrammar itself is not taken).
+- test-golden's data, whole: zig/tests/server/golden/ (cases.json and 335 recorded replies, 319 before 1.1.5; since 1.1.1
+  security-cases.json and its 26, 55 at 1.2.1: API keys, Host and Origin, then admission, key scopes and full-key cases) and zig/tests/server/fixtures/ (3 files).
+- LICENSE, NOTICE, THIRD_PARTY_NOTICES.md and LICENSES/ (12 texts).
+
+Against 1.2.3's import: 78 files came and none went; no root moved. zig/src/core/ 19: `image_api.zig`
+(the engine's image capability and `VTable.submit_image`, #2248), `engine_refusal`'s helpers' home's
+companions `engine_cache_plan.zig`, `engine_capabilities.zig`, `platform/environment.zig` (the named
+settings table every TF_/TENSORFOLD_ read is refused through, #2405) and `file_identity.zig`, the kept-state
+slots and others' protection (`prompt_cache_others*.zig`, `prompt_cache_note.zig`), lanes' `solo_chunk.zig`
+and `prefill_widths.zig` (#2304, the prompt widths a finished request reports), `lane_host_env.zig`,
+`lane_trace.zig`, rows_dropped and profile and rollback tests; zig/src/server/ 40 (`engine_refusal.zig`,
+upstream's own take of #2082's ask once in chat.prepare — the zspark rows that added `Engine.refusal`,
+`Structure.field` and `nameStructure` are upstream's own now, their patches dropped; clef's `clef_*.zig`
+(the DeepSeek v4.1 encoder route) and its fixtures, `slide_metrics*.zig` 8 and the slide panel and recall
+input, `pdf_worker.zig`, `deepseek_request.zig`, `deepseek_schema.zig`, `hf_text_parse.zig`,
+`reply_tool_tail.zig`, `request_starts_turns_test.zig`, the thinking fixtures (GLM-5.3, LFM2) and
+`quoted_markers_test.zig`); zig/src/platform/ `environment*.zig` 2; fixtures 6 (deepseek_v41_encoder,
+nemotron_parse.jinja, thinking/*, slide_metrics_off.json); one license text (NVIDIA-OpenMDW-1.1). The
+recorded replies' 16 files changed (keys' identity cases and status' models list name resolved profiles,
+framing's chunked bytes; `golden_check.zig` with them), none came or went. The names left unresolved are
+1.2.3's.
+
+Against 1.2.1's import: 81 files came and none went; no root moved but `profile` came: `zig/src/core/profile.zig`
+(and `profile_test.zig`), the switch registry `engine_api` imports by name since 1.2.3, a root of the script's
+and a `Shared` module of build.zig's `Host` (upstream's `zig/build/profile.zig` hands it to every module).
+zig/src/core/ 30: the request controls
+moved to `engine_request_controls.zig`, `Engine.decide` and `score` for `/v1/rerank` and `/v1/decisions`
+(`engine_api_test.zig`, lanes/`readout.zig`, `row_cost.zig`, `grammar_parallel.zig`, `grammar_window.zig`,
+`kv_ledger.zig`, `lane_readouts.zig`, `lane_prompt_only.zig`, `lane_host_srpt.zig`, `lane_host_ledger*.zig`),
+the tokenizer's `qwen2_slow.zig` and `tiktoken.zig` (a Qwen2 slow export is converted where `tokenizer.json`
+is absent, upstream's own for our loadTokenizer patch, and tiktoken's loader now in the closure),
+`pocket_audit.zig`, `prompt_rules.zig`, `cache_images.zig`, `benchmark_info.zig`; zig/src/living/
+`pocket_audit*` 2; zig/src/server/ 43 (rerank's `rerank*.zig` 5, Kimi's `chat_kimi.zig` and `kimi_*.zig` 6,
+`pdf.zig` (PDF inputs), DSML/GLM tool streams and their tests, `openai_calls.zig`, `chat_generation.zig`,
+`wait_reason.zig` (the fixed retryable-wait codes, #2135), `prompt_only_wait.zig`, `cached_tokens.zig`,
+`profile_line.zig`, `prompt_cache_line.zig`, `slide_audit*.zig` 6, `gguf_refusal.zig`); 4 license texts
+(AOTriton, Kimi K3/K3.1, LFM-Open-1.0). None of the recorded replies' 392 files came or went; one changed
+(`keys/full-imprint-load.json`, #2131's resolved profile values in persisted prompt states). 158 files
+changed, that one recording among them. PNG's tRNS key is compared by its low byte upstream (PR #2100 taken): that patch is dropped. `Engine.refusal` and
+`Structure.field` (#2082, #2084) are not in 1.2.3: their patches are carried. The names left unresolved are
+1.2.1's.
+
+Against 1.1.5's import: 152 files came (839,938 bytes) and none went; no root moved. zig/src/core/ 53 outside
+lanes/: the lane host's load, fetch, prefix, pressure and warm (`lane_host_load.zig`, `lane_host_fetch.zig`,
+`lane_host_prefix.zig`, `lane_host_pressure.zig`, `lane_host_warm.zig` and their tests), memory pressure and
+the load ledger, prompt-cache fork/index/repeat/shed, rows prefetch/io/write-sync, picture/normalize and
+patches, template/sequence, `draft_sources.zig`, `engine_slide.zig`, `engine_stats.zig`, `lane_activity.zig`;
+lanes/ 21 (late draft, shared drafts, grammar time, hold_price, grammar_fake); zig/src/living/ 3
+(`pocket_round_test.zig`, `restart_fixture.zig`, `widths.zig`); zig/src/server/ 43 (auth scopes, request
+admission, load metrics, loop_stop, spark_wire, speech sampling/stream, tool_dsml, tool_glm_cut,
+tool_grammar_deepseek, tool_minimax, family_sampling, grammar_metrics, media_fetch_tls, cli_fsr, cli_gpu_flags,
+draft_line, linear_time, process_resident, slide_forget_many, slide_input); 3 license texts
+(`LICENSES/Mia-FlashNext-MIT.txt`, `avx_mathfun-zlib.txt`, `mlx-omarchy-MIT.txt`). 29 recordings came under
+golden/ (admission/ 2, keys/full-* 14, scopes/ 13); none of the 335 went. 160 files changed, 9 recordings among
+them (stops and tools streams, responses/tools-stream) and security-cases.json. The names left unresolved are
+1.1.5's.
+
+Against 1.1.4's import: 35 files came (158,122 bytes) and none went; no root moved. zig/src/core/ 7: the kept
+interior prompt state (`prompt_interior.zig`, `prompt_cache_fit.zig`, their tests), the lane host's prompt share
+and interrupted prefill (`lane_host_share_test.zig`, `lane_host_interrupted_test.zig`), lanes/drafted_step_test.zig;
+zig/src/server/ 10 and fixtures/dory/ 2 (LFM2's calls: `tool_lfm2.zig`, `tool_grammar_lfm2.zig`, their tests;
+`tool_cut_test.zig`; `stop_hook.zig` and `cli_capabilities.zig`, moved out of chat.zig and cli.zig; `drama_cfg.zig`
+and `speech_cfg_test.zig`; `dory_chat_test.zig`); 16 recordings under golden/tools/ (`lfm2_*`). 57 files changed,
+one recording among them (golden/lifecycle/request-log.json, the LFM2 cases' requests), with cases.json and
+fixtures/scripts.json. `drama_prompt`'s `build` returns `Built` (the frames and the reference prompt's rows):
+build.zig's stub follows. The names left unresolved are 1.1.4's.
+
+Against 1.1.1's import: 108 files came (636,309 bytes) and none went. zig/src/core/ 20 outside lanes/: embeddings
+(`embedding_vector.zig`, `lane_embeddings.zig`), the lane host's scoring (`lane_host_score.zig`),
+`rows_select.zig`, `speech_guard.zig`, picture/runtime.zig, template/provenance.zig (request bytes through the
+template), tokenizer/eos.zig, and 12 tests; lanes/ 20; zig/src/platform/ 4 (`atomic_file.zig`,
+`grammar_library.zig`, `memory_policy.zig`, `video_library.zig`); zig/src/server/ 55, cortheon/ 3 and
+fixtures/control_tokens/ 5 (request provenance and `vision_markers.zig`, `idle_unload*`, `speech_*`, `drama_*`,
+`embedding*`, `http_admission.zig`, `http_deadline.zig`, `public_address.zig`, `engines.zig`, `hf_eos*`,
+`thinking_reserve.zig`, `tool_kinds.zig`, `tool_union_witness.zig`); and the `dsv41_chat` root. 144 files
+changed, one recording among them (golden/tools/bad_tool-single.json, upstream's #1207: with
+`parallel_tool_calls` false a malformed call is content); none of the 319 came or went.
+
+Against 1.0.12's import: 154 files came (875,247 bytes) and none went. zig/src/core/ 24 (the lane host's
+`lane_*` split, its round planner `lane_rounds.zig`, `lane_halt.zig`, `engine_status.zig`, `engine_vision.zig`,
+`learning_api.zig`, `speech_api.zig`, `prompt_cache_restore.zig`, `save_guard.zig`, `checkpoint_config.zig`),
+lanes/ 18, picture/webp.zig, zig/src/living/ 41 and zig/src/platform/ 8 (new roots), zig/src/server/ 34 and a
+fixture (`request_guard.zig`, Host and Origin; `stream_live.zig`; `tool_closers.zig`; `tool_required_witness.zig`;
+`speech.zig`; benchmark, drain, keepalive and slide files); under golden/ security-cases.json, keys/ 6 and
+origin/ 20. 2 recordings changed (cases.json, framing/http09.json), none of the 319 came or went.
+
+Against 1.0.5's import: 147 sources came (1,485,483 bytes) and 4 went (zig/src/core/serial_host.zig,
+serial_host_test.zig, serial_batch_test.zig, cache_mode_host_test.zig); 2 license texts came
+(LICENSES/Pillow-MIT-CMU.txt, PyTorch-BSD-3.txt), and tf_grammar.cc beside the closure. About 100 of the new sources are features zspark does not
+serve (Cortheon, the `slide_*` Living Weights, `benchmark_*`, Recall, kept rows on disk, images and videos,
+`media_fetch`, `systemone`), compiled because the closure follows imports, test blocks included. Structured
+output's library, libtfgrammar (xgrammar 0.2.8), is dlopened by `zig/src/core/lanes/grammar.zig`: no C import
+or `extern fn` came. 23 of the 319 recordings changed, none came or went; `golden_check.zig` and
+`fake_serve.zig` changed, and `fake_engine.zig` and `wire.zig` came beside them.
+
+Before 1.0.12, against 1.0.4's import: 17 sources came and none went. zig/src/core/: learned_disk.zig, learned_plan.zig,
+prompt_learn.zig, prompt_cache_fake.zig and three tests (learned_fault_test.zig, prompt_cache_rewind_test.zig,
+prompt_imprint_fault_test.zig); lanes/: drafted.zig, drafted_test.zig, drafter.zig, learned_dirs.zig,
+learned_disk.zig, logprob.zig; zig/src/server/: logprobs.zig, logprobs_test.zig, completion_prompt_test.zig,
+slide_units.zig. 8 recordings were renamed, their bytes the same: a case's `"`, `:` and `?` are `%22`, `%3A`
+and `%3F` in its file's name (a name every OS checks out; `golden_check.zig` `fileName`). 43 files changed.
+Against 1.0.2's: 18 more sources came with 1.0.4 (cache_modes.zig, serial_host.zig, lanes/cost_rule.zig and
+cost_cache.zig, the server's memory_routes.zig, process_memory.zig, slide*.zig and slide.html, startup.zig,
+warm.zig, their tests), and 15 recordings of `/models` changed.
+
+What was left, of the directories read (216 files at 1.1.1; not counted again at 1.1.4, where engines.zig came): zig/src/core/tokenizer/check.zig and tiktoken.zig,
+zig/src/core/template/parity.zig, zig/src/server/main.zig, engines.zig, recall_open.zig, vision_inputs.zig,
+dashboard_test.zig and tool_parse_test.zig, zig/src/platform/windows_library_test.zig (nothing in the closure
+imports them), 128 of zig/src/core/'s 212 files and its contract/, quant/, qwen_vl/ and fixtures/, and under
+zig/tests/server/ the Python that recorded the replies, build.sh and zig_test.sh. All of zig/src/core/lanes/ and
+zig/src/living/ is in the closure, `grammar.zig` with it. Nothing was taken of upstream's families, CUDA, Metal,
+cluster, fabric, native or CLI sources.
